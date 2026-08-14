@@ -67,6 +67,19 @@ const ProjectDetails = () => {
 
     const [taskDueDate, setTaskDueDate] = useState("");
     const [taskAssigneeId, setTaskAssigneeId] = useState("");
+    const [taskSearch, setTaskSearch] = useState("");
+    const [taskStatusFilter, setTaskStatusFilter] =
+        useState<"ALL" | Task["status"]>("ALL");
+
+    const [taskPriorityFilter, setTaskPriorityFilter] =
+        useState<"ALL" | Task["priority"]>("ALL");
+
+    const [taskAssigneeFilter, setTaskAssigneeFilter] =
+        useState("ALL");
+
+    const [taskSort, setTaskSort] = useState<
+        "NEWEST" | "OLDEST" | "DUE_DATE" | "PRIORITY"
+    >("NEWEST");
 
     const [creatingTask, setCreatingTask] = useState(false);
     const [createTaskError, setCreateTaskError] = useState("");
@@ -94,6 +107,98 @@ const ProjectDetails = () => {
     const [updateTaskError, setUpdateTaskError] = useState("");
     const [updateTaskSuccess, setUpdateTaskSuccess] = useState("");
 
+    const displayedTasks = [...(project?.tasks || [])]
+        .filter((task) => {
+            const search = taskSearch.trim().toLowerCase();
+
+            if (!search) {
+                return true;
+            }
+
+            return (
+                task.title.toLowerCase().includes(search) ||
+                (task.description || "")
+                    .toLowerCase()
+                    .includes(search)
+            );
+        })
+        .filter((task) => {
+            if (taskStatusFilter === "ALL") {
+                return true;
+            }
+
+            return task.status === taskStatusFilter;
+        })
+        .filter((task) => {
+            if (taskPriorityFilter === "ALL") {
+                return true;
+            }
+
+            return task.priority === taskPriorityFilter;
+        })
+        .filter((task) => {
+            if (taskAssigneeFilter === "ALL") {
+                return true;
+            }
+
+            if (taskAssigneeFilter === "UNASSIGNED") {
+                return !task.assignee;
+            }
+
+            return task.assignee?.id === taskAssigneeFilter;
+        })
+        .sort((a, b) => {
+            switch (taskSort) {
+                case "OLDEST":
+                    return (
+                        new Date(a.createdAt).getTime() -
+                        new Date(b.createdAt).getTime()
+                    );
+
+                case "DUE_DATE": {
+                    if (!a.dueDate && !b.dueDate) {
+                        return 0;
+                    }
+
+                    if (!a.dueDate) {
+                        return 1;
+                    }
+
+                    if (!b.dueDate) {
+                        return -1;
+                    }
+
+                    return (
+                        new Date(a.dueDate).getTime() -
+                        new Date(b.dueDate).getTime()
+                    );
+                }
+
+                case "PRIORITY": {
+                    const priorityOrder: Record<
+                        Task["priority"],
+                        number
+                    > = {
+                        URGENT: 4,
+                        HIGH: 3,
+                        MEDIUM: 2,
+                        LOW: 1,
+                    };
+
+                    return (
+                        priorityOrder[b.priority] -
+                        priorityOrder[a.priority]
+                    );
+                }
+
+                case "NEWEST":
+                default:
+                    return (
+                        new Date(b.createdAt).getTime() -
+                        new Date(a.createdAt).getTime()
+                    );
+            }
+        });
     // =========================================================
     // LOAD PROJECT
     // =========================================================
@@ -470,38 +575,38 @@ const ProjectDetails = () => {
     };
 
     const handleDeleteTask = async (taskId: string) => {
-  const confirmed = window.confirm(
-    "Are you sure you want to delete this task?"
-  );
+        const confirmed = window.confirm(
+            "Are you sure you want to delete this task?"
+        );
 
-  if (!confirmed) {
-    return;
-  }
+        if (!confirmed) {
+            return;
+        }
 
-  try {
-    await api.delete(`/tasks/${taskId}`);
+        try {
+            await api.delete(`/tasks/${taskId}`);
 
-    setProject((currentProject) => {
-      if (!currentProject) {
-        return currentProject;
-      }
+            setProject((currentProject) => {
+                if (!currentProject) {
+                    return currentProject;
+                }
 
-      return {
-        ...currentProject,
-        tasks: currentProject.tasks.filter(
-          (task) => task.id !== taskId
-        ),
-      };
-    });
-  } catch (error: any) {
-    console.error("Delete task failed:", error);
+                return {
+                    ...currentProject,
+                    tasks: currentProject.tasks.filter(
+                        (task) => task.id !== taskId
+                    ),
+                };
+            });
+        } catch (error: any) {
+            console.error("Delete task failed:", error);
 
-    alert(
-      error.response?.data?.message ||
-        "Failed to delete task. Please try again."
-    );
-  }
-};
+            alert(
+                error.response?.data?.message ||
+                "Failed to delete task. Please try again."
+            );
+        }
+    };
 
     // =========================================================
     // LOADING
@@ -812,6 +917,148 @@ const ProjectDetails = () => {
                         </section>
                     )}
 
+                            <div>
+                                {/* SEARCH */}
+                                <div>
+                                    <label htmlFor="task-search">
+                                        Search Tasks
+                                    </label>
+
+                                    <input
+                                        id="task-search"
+                                        type="text"
+                                        value={taskSearch}
+                                        onChange={(event) =>
+                                            setTaskSearch(event.target.value)
+                                        }
+                                        placeholder="Search by title or description"
+                                    />
+                                </div>
+
+                                {/* STATUS FILTER */}
+                                <div>
+                                    <label htmlFor="task-status-filter">
+                                        Status
+                                    </label>
+
+                                    <select
+                                        id="task-status-filter"
+                                        value={taskStatusFilter}
+                                        onChange={(event) =>
+                                            setTaskStatusFilter(
+                                                event.target.value as
+                                                | "ALL"
+                                                | Task["status"]
+                                            )
+                                        }
+                                    >
+                                        <option value="ALL">All</option>
+                                        <option value="TODO">To Do</option>
+                                        <option value="IN_PROGRESS">
+                                            In Progress
+                                        </option>
+                                        <option value="IN_REVIEW">
+                                            In Review
+                                        </option>
+                                        <option value="DONE">Done</option>
+                                    </select>
+                                </div>
+
+                                {/* PRIORITY FILTER */}
+                                <div>
+                                    <label htmlFor="task-priority-filter">
+                                        Priority
+                                    </label>
+
+                                    <select
+                                        id="task-priority-filter"
+                                        value={taskPriorityFilter}
+                                        onChange={(event) =>
+                                            setTaskPriorityFilter(
+                                                event.target.value as
+                                                | "ALL"
+                                                | Task["priority"]
+                                            )
+                                        }
+                                    >
+                                        <option value="ALL">All</option>
+                                        <option value="LOW">Low</option>
+                                        <option value="MEDIUM">Medium</option>
+                                        <option value="HIGH">High</option>
+                                        <option value="URGENT">Urgent</option>
+                                    </select>
+                                </div>
+
+                                {/* ASSIGNEE FILTER */}
+                                <div>
+                                    <label htmlFor="task-assignee-filter">
+                                        Assignee
+                                    </label>
+
+                                    <select
+                                        id="task-assignee-filter"
+                                        value={taskAssigneeFilter}
+                                        onChange={(event) =>
+                                            setTaskAssigneeFilter(
+                                                event.target.value
+                                            )
+                                        }
+                                    >
+                                        <option value="ALL">All</option>
+
+                                        <option value="UNASSIGNED">
+                                            Unassigned
+                                        </option>
+
+                                        {members.map((member) => (
+                                            <option
+                                                key={member.user.id}
+                                                value={member.user.id}
+                                            >
+                                                {member.user.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* SORT */}
+                                <div>
+                                    <label htmlFor="task-sort">
+                                        Sort By
+                                    </label>
+
+                                    <select
+                                        id="task-sort"
+                                        value={taskSort}
+                                        onChange={(event) =>
+                                            setTaskSort(
+                                                event.target.value as
+                                                | "NEWEST"
+                                                | "OLDEST"
+                                                | "DUE_DATE"
+                                                | "PRIORITY"
+                                            )
+                                        }
+                                    >
+                                        <option value="NEWEST">
+                                            Newest
+                                        </option>
+
+                                        <option value="OLDEST">
+                                            Oldest
+                                        </option>
+
+                                        <option value="DUE_DATE">
+                                            Due Date
+                                        </option>
+
+                                        <option value="PRIORITY">
+                                            Priority
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
                     {/* ===================================================
               NO TASKS
           ==================================================== */}
@@ -826,374 +1073,398 @@ const ProjectDetails = () => {
                                 project.
                             </p>
                         </div>
+
+
                     )}
+
+                    {/* ===================================================
+              FILTERED RESULTS
+          ==================================================== */}
+
+                    {project.tasks.length > 0 &&
+                        displayedTasks.length === 0 && (
+                            <div>
+                                <p>No tasks match your current filters.</p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setTaskSearch("");
+                                        setTaskStatusFilter("ALL");
+                                        setTaskPriorityFilter("ALL");
+                                        setTaskAssigneeFilter("ALL");
+                                        setTaskSort("NEWEST");
+                                    }}
+                                >
+                                    Clear Filters
+                                </button>
+                            </div>
+                        )}
 
                     {/* ===================================================
               TASK LIST
           ==================================================== */}
 
-                    {project.tasks.length > 0 && (
+                    {project.tasks.length > 0 && displayedTasks.length > 0 && (
                         <div>
-                            {project.tasks.map(
-                                (task) => (
-                                    <article
-                                        key={task.id}
-                                    >
-                                        {/* ================================
+                            {displayedTasks.map((task) => (
+                                <article
+                                    key={task.id}
+                                >
+                                    {/* ================================
                         TASK INFORMATION
                     ================================= */}
 
-                                        <h3>
-                                            {task.title}
-                                        </h3>
+                                    <h3>
+                                        {task.title}
+                                    </h3>
 
-                                        <p>
-                                            {task.description ||
-                                                "No description provided."}
-                                        </p>
+                                    <p>
+                                        {task.description ||
+                                            "No description provided."}
+                                    </p>
 
-                                        <div>
-                                            <label htmlFor={`status-${task.id}`}>
-                                                Status:
-                                            </label>
+                                    <div>
+                                        <label htmlFor={`status-${task.id}`}>
+                                            Status:
+                                        </label>
 
-                                            <select
-                                                id={`status-${task.id}`}
-                                                value={task.status}
-                                                onChange={(event) =>
-                                                    handleStatusChange(
-                                                        task.id,
-                                                        event.target.value as Task["status"]
-                                                    )
-                                                }
-                                            >
-                                                <option value="TODO">
-                                                    TODO
-                                                </option>
-
-                                                <option value="IN_PROGRESS">
-                                                    IN PROGRESS
-                                                </option>
-
-                                                <option value="IN_REVIEW">
-                                                    IN REVIEW
-                                                </option>
-
-                                                <option value="DONE">
-                                                    DONE
-                                                </option>
-                                            </select>
-                                        </div>
-
-                                        <p>
-                                            Priority:{" "}
-                                            <strong>
-                                                {task.priority}
-                                            </strong>
-                                        </p>
-
-                                        <p>
-                                            Assignee:{" "}
-                                            <strong>
-                                                {task.assignee
-                                                    ?.name ||
-                                                    "Unassigned"}
-                                            </strong>
-                                        </p>
-
-                                        {task.dueDate && (
-                                            <p>
-                                                Due:{" "}
-                                                {new Date(
-                                                    task.dueDate
-                                                ).toLocaleDateString()}
-                                            </p>
-                                        )}
-
-                                        {/* ================================
-                        EDIT TASK BUTTON
-                    ================================= */}
-
-                                        <button
-                                            onClick={() =>
-                                                handleEditTask(
-                                                    task
+                                        <select
+                                            id={`status-${task.id}`}
+                                            value={task.status}
+                                            onChange={(event) =>
+                                                handleStatusChange(
+                                                    task.id,
+                                                    event.target.value as Task["status"]
                                                 )
                                             }
                                         >
-                                            Edit Task
-                                        </button>
+                                            <option value="TODO">
+                                                TODO
+                                            </option>
 
-                                        <button
-  onClick={() => handleDeleteTask(task.id)}
->
-  Delete Task
-</button>
+                                            <option value="IN_PROGRESS">
+                                                IN PROGRESS
+                                            </option>
 
-                                        {/* ================================
+                                            <option value="IN_REVIEW">
+                                                IN REVIEW
+                                            </option>
+
+                                            <option value="DONE">
+                                                DONE
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    <p>
+                                        Priority:{" "}
+                                        <strong>
+                                            {task.priority}
+                                        </strong>
+                                    </p>
+
+                                    <p>
+                                        Assignee:{" "}
+                                        <strong>
+                                            {task.assignee
+                                                ?.name ||
+                                                "Unassigned"}
+                                        </strong>
+                                    </p>
+
+                                    {task.dueDate && (
+                                        <p>
+                                            Due:{" "}
+                                            {new Date(
+                                                task.dueDate
+                                            ).toLocaleDateString()}
+                                        </p>
+                                    )}
+
+                                    {/* ================================
+                        EDIT TASK BUTTON
+                    ================================= */}
+
+                                    <button
+                                        onClick={() =>
+                                            handleEditTask(
+                                                task
+                                            )
+                                        }
+                                    >
+                                        Edit Task
+                                    </button>
+
+                                    <button
+                                        onClick={() => handleDeleteTask(task.id)}
+                                    >
+                                        Delete Task
+                                    </button>
+
+                                    {/* ================================
                         EDIT TASK FORM
                     ================================= */}
 
-                                        {editingTaskId ===
-                                            task.id && (
-                                                <section>
-                                                    <h4>
-                                                        Edit Task
-                                                    </h4>
+                                    {editingTaskId ===
+                                        task.id && (
+                                            <section>
+                                                <h4>
+                                                    Edit Task
+                                                </h4>
 
-                                                    <form
-                                                        onSubmit={
-                                                            handleUpdateTaskSubmit
+                                                <form
+                                                    onSubmit={
+                                                        handleUpdateTaskSubmit
+                                                    }
+                                                >
+                                                    {/* TITLE */}
+
+                                                    <div>
+                                                        <label
+                                                            htmlFor={`edit-title-${task.id}`}
+                                                        >
+                                                            Title
+                                                        </label>
+
+                                                        <input
+                                                            id={`edit-title-${task.id}`}
+                                                            type="text"
+                                                            value={
+                                                                editTaskTitle
+                                                            }
+                                                            onChange={(
+                                                                event
+                                                            ) =>
+                                                                setEditTaskTitle(
+                                                                    event
+                                                                        .target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                updatingTask
+                                                            }
+                                                        />
+                                                    </div>
+
+                                                    {/* DESCRIPTION */}
+
+                                                    <div>
+                                                        <label
+                                                            htmlFor={`edit-description-${task.id}`}
+                                                        >
+                                                            Description
+                                                        </label>
+
+                                                        <textarea
+                                                            id={`edit-description-${task.id}`}
+                                                            value={
+                                                                editTaskDescription
+                                                            }
+                                                            onChange={(
+                                                                event
+                                                            ) =>
+                                                                setEditTaskDescription(
+                                                                    event
+                                                                        .target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            rows={4}
+                                                            disabled={
+                                                                updatingTask
+                                                            }
+                                                        />
+                                                    </div>
+
+                                                    {/* PRIORITY */}
+
+                                                    <div>
+                                                        <label
+                                                            htmlFor={`edit-priority-${task.id}`}
+                                                        >
+                                                            Priority
+                                                        </label>
+
+                                                        <select
+                                                            id={`edit-priority-${task.id}`}
+                                                            value={
+                                                                editTaskPriority
+                                                            }
+                                                            onChange={(
+                                                                event
+                                                            ) =>
+                                                                setEditTaskPriority(
+                                                                    event
+                                                                        .target
+                                                                        .value as
+                                                                    | "LOW"
+                                                                    | "MEDIUM"
+                                                                    | "HIGH"
+                                                                    | "URGENT"
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                updatingTask
+                                                            }
+                                                        >
+                                                            <option value="LOW">
+                                                                Low
+                                                            </option>
+
+                                                            <option value="MEDIUM">
+                                                                Medium
+                                                            </option>
+
+                                                            <option value="HIGH">
+                                                                High
+                                                            </option>
+
+                                                            <option value="URGENT">
+                                                                Urgent
+                                                            </option>
+                                                        </select>
+                                                    </div>
+
+                                                    {/* DUE DATE */}
+
+                                                    <div>
+                                                        <label
+                                                            htmlFor={`edit-due-date-${task.id}`}
+                                                        >
+                                                            Due Date
+                                                        </label>
+
+                                                        <input
+                                                            id={`edit-due-date-${task.id}`}
+                                                            type="date"
+                                                            value={
+                                                                editTaskDueDate
+                                                            }
+                                                            onChange={(
+                                                                event
+                                                            ) =>
+                                                                setEditTaskDueDate(
+                                                                    event
+                                                                        .target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                updatingTask
+                                                            }
+                                                        />
+                                                    </div>
+
+                                                    {/* ASSIGNEE */}
+
+                                                    <div>
+                                                        <label
+                                                            htmlFor={`edit-assignee-${task.id}`}
+                                                        >
+                                                            Assignee
+                                                        </label>
+
+                                                        <select
+                                                            id={`edit-assignee-${task.id}`}
+                                                            value={
+                                                                editTaskAssigneeId
+                                                            }
+                                                            onChange={(
+                                                                event
+                                                            ) =>
+                                                                setEditTaskAssigneeId(
+                                                                    event
+                                                                        .target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                updatingTask
+                                                            }
+                                                        >
+                                                            <option value="">
+                                                                Unassigned
+                                                            </option>
+
+                                                            {members.map(
+                                                                (
+                                                                    member
+                                                                ) => (
+                                                                    <option
+                                                                        key={
+                                                                            member
+                                                                                .user
+                                                                                .id
+                                                                        }
+                                                                        value={
+                                                                            member
+                                                                                .user
+                                                                                .id
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            member
+                                                                                .user
+                                                                                .name
+                                                                        }
+                                                                    </option>
+                                                                )
+                                                            )}
+                                                        </select>
+                                                    </div>
+
+                                                    {/* ERROR */}
+
+                                                    {updateTaskError && (
+                                                        <p>
+                                                            {
+                                                                updateTaskError
+                                                            }
+                                                        </p>
+                                                    )}
+
+                                                    {/* SUCCESS */}
+
+                                                    {updateTaskSuccess && (
+                                                        <p>
+                                                            {
+                                                                updateTaskSuccess
+                                                            }
+                                                        </p>
+                                                    )}
+
+                                                    {/* SAVE */}
+
+                                                    <button
+                                                        type="submit"
+                                                        disabled={
+                                                            updatingTask
                                                         }
                                                     >
-                                                        {/* TITLE */}
+                                                        {updatingTask
+                                                            ? "Saving..."
+                                                            : "Save Changes"}
+                                                    </button>
 
-                                                        <div>
-                                                            <label
-                                                                htmlFor={`edit-title-${task.id}`}
-                                                            >
-                                                                Title
-                                                            </label>
+                                                    {/* CANCEL */}
 
-                                                            <input
-                                                                id={`edit-title-${task.id}`}
-                                                                type="text"
-                                                                value={
-                                                                    editTaskTitle
-                                                                }
-                                                                onChange={(
-                                                                    event
-                                                                ) =>
-                                                                    setEditTaskTitle(
-                                                                        event
-                                                                            .target
-                                                                            .value
-                                                                    )
-                                                                }
-                                                                disabled={
-                                                                    updatingTask
-                                                                }
-                                                            />
-                                                        </div>
-
-                                                        {/* DESCRIPTION */}
-
-                                                        <div>
-                                                            <label
-                                                                htmlFor={`edit-description-${task.id}`}
-                                                            >
-                                                                Description
-                                                            </label>
-
-                                                            <textarea
-                                                                id={`edit-description-${task.id}`}
-                                                                value={
-                                                                    editTaskDescription
-                                                                }
-                                                                onChange={(
-                                                                    event
-                                                                ) =>
-                                                                    setEditTaskDescription(
-                                                                        event
-                                                                            .target
-                                                                            .value
-                                                                    )
-                                                                }
-                                                                rows={4}
-                                                                disabled={
-                                                                    updatingTask
-                                                                }
-                                                            />
-                                                        </div>
-
-                                                        {/* PRIORITY */}
-
-                                                        <div>
-                                                            <label
-                                                                htmlFor={`edit-priority-${task.id}`}
-                                                            >
-                                                                Priority
-                                                            </label>
-
-                                                            <select
-                                                                id={`edit-priority-${task.id}`}
-                                                                value={
-                                                                    editTaskPriority
-                                                                }
-                                                                onChange={(
-                                                                    event
-                                                                ) =>
-                                                                    setEditTaskPriority(
-                                                                        event
-                                                                            .target
-                                                                            .value as
-                                                                        | "LOW"
-                                                                        | "MEDIUM"
-                                                                        | "HIGH"
-                                                                        | "URGENT"
-                                                                    )
-                                                                }
-                                                                disabled={
-                                                                    updatingTask
-                                                                }
-                                                            >
-                                                                <option value="LOW">
-                                                                    Low
-                                                                </option>
-
-                                                                <option value="MEDIUM">
-                                                                    Medium
-                                                                </option>
-
-                                                                <option value="HIGH">
-                                                                    High
-                                                                </option>
-
-                                                                <option value="URGENT">
-                                                                    Urgent
-                                                                </option>
-                                                            </select>
-                                                        </div>
-
-                                                        {/* DUE DATE */}
-
-                                                        <div>
-                                                            <label
-                                                                htmlFor={`edit-due-date-${task.id}`}
-                                                            >
-                                                                Due Date
-                                                            </label>
-
-                                                            <input
-                                                                id={`edit-due-date-${task.id}`}
-                                                                type="date"
-                                                                value={
-                                                                    editTaskDueDate
-                                                                }
-                                                                onChange={(
-                                                                    event
-                                                                ) =>
-                                                                    setEditTaskDueDate(
-                                                                        event
-                                                                            .target
-                                                                            .value
-                                                                    )
-                                                                }
-                                                                disabled={
-                                                                    updatingTask
-                                                                }
-                                                            />
-                                                        </div>
-
-                                                        {/* ASSIGNEE */}
-
-                                                        <div>
-                                                            <label
-                                                                htmlFor={`edit-assignee-${task.id}`}
-                                                            >
-                                                                Assignee
-                                                            </label>
-
-                                                            <select
-                                                                id={`edit-assignee-${task.id}`}
-                                                                value={
-                                                                    editTaskAssigneeId
-                                                                }
-                                                                onChange={(
-                                                                    event
-                                                                ) =>
-                                                                    setEditTaskAssigneeId(
-                                                                        event
-                                                                            .target
-                                                                            .value
-                                                                    )
-                                                                }
-                                                                disabled={
-                                                                    updatingTask
-                                                                }
-                                                            >
-                                                                <option value="">
-                                                                    Unassigned
-                                                                </option>
-
-                                                                {members.map(
-                                                                    (
-                                                                        member
-                                                                    ) => (
-                                                                        <option
-                                                                            key={
-                                                                                member
-                                                                                    .user
-                                                                                    .id
-                                                                            }
-                                                                            value={
-                                                                                member
-                                                                                    .user
-                                                                                    .id
-                                                                            }
-                                                                        >
-                                                                            {
-                                                                                member
-                                                                                    .user
-                                                                                    .name
-                                                                            }
-                                                                        </option>
-                                                                    )
-                                                                )}
-                                                            </select>
-                                                        </div>
-
-                                                        {/* ERROR */}
-
-                                                        {updateTaskError && (
-                                                            <p>
-                                                                {
-                                                                    updateTaskError
-                                                                }
-                                                            </p>
-                                                        )}
-
-                                                        {/* SUCCESS */}
-
-                                                        {updateTaskSuccess && (
-                                                            <p>
-                                                                {
-                                                                    updateTaskSuccess
-                                                                }
-                                                            </p>
-                                                        )}
-
-                                                        {/* SAVE */}
-
-                                                        <button
-                                                            type="submit"
-                                                            disabled={
-                                                                updatingTask
-                                                            }
-                                                        >
-                                                            {updatingTask
-                                                                ? "Saving..."
-                                                                : "Save Changes"}
-                                                        </button>
-
-                                                        {/* CANCEL */}
-
-                                                        <button
-                                                            type="button"
-                                                            onClick={
-                                                                handleCancelEdit
-                                                            }
-                                                            disabled={
-                                                                updatingTask
-                                                            }
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                    </form>
-                                                </section>
-                                            )}
-                                    </article>
-                                )
+                                                    <button
+                                                        type="button"
+                                                        onClick={
+                                                            handleCancelEdit
+                                                        }
+                                                        disabled={
+                                                            updatingTask
+                                                        }
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </form>
+                                            </section>
+                                        )}
+                                </article>
+                            )
                             )}
                         </div>
                     )}
