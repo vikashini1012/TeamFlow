@@ -52,6 +52,13 @@ const TeamDetails = () => {
     const [memberError, setMemberError] = useState("");
     const [memberSuccess, setMemberSuccess] = useState("");
 
+    const [showCreateProject, setShowCreateProject] = useState(false);
+    const [projectName, setProjectName] = useState("");
+    const [projectDescription, setProjectDescription] = useState("");
+    const [creatingProject, setCreatingProject] = useState(false);
+    const [projectError, setProjectError] = useState("");
+    const [projectSuccess, setProjectSuccess] = useState("");
+
     useEffect(() => {
         const fetchTeam = async () => {
             const token = localStorage.getItem("teamflow_token");
@@ -82,7 +89,6 @@ const TeamDetails = () => {
                 setLoading(false);
             }
         };
-
         fetchTeam();
     }, [teamId, navigate]);
 
@@ -135,6 +141,58 @@ const TeamDetails = () => {
             );
         } finally {
             setAddingMember(false);
+        }
+    };
+
+    const handleCreateProject = async (
+        event: FormEvent<HTMLFormElement>
+    ) => {
+        event.preventDefault();
+
+        if (!teamId) {
+            setProjectError("Invalid team ID.");
+            return;
+        }
+
+        if (!projectName.trim()) {
+            setProjectError("Project name is required.");
+            return;
+        }
+
+        try {
+            setCreatingProject(true);
+            setProjectError("");
+            setProjectSuccess("");
+
+            await api.post(`/teams/${teamId}/projects`, {
+                name: projectName.trim(),
+                description: projectDescription.trim(),
+            });
+
+            setProjectSuccess("Project created successfully!");
+
+            setProjectName("");
+            setProjectDescription("");
+
+            // Reload team data so the project list and count
+            // are synchronized with the database.
+            const response = await api.get(`/teams/${teamId}`);
+
+            setTeam(response.data.team);
+
+            setTimeout(() => {
+                setShowCreateProject(false);
+                setProjectSuccess("");
+            }, 1000);
+        } catch (error: any) {
+            console.error("Failed to create project:", error);
+
+            setProjectError(
+                error.response?.data?.message ||
+                "Failed to create project. Please try again."
+            );
+        } finally {
+            setCreatingProject(false);
         }
     };
 
@@ -332,15 +390,92 @@ const TeamDetails = () => {
 
                 {/* Projects */}
                 <section>
-                    <h2>Projects</h2>
+                    <div>
+                        <h2>Projects</h2>
+
+                        <button
+                            onClick={() => {
+                                setProjectName("");
+                                setProjectDescription("");
+                                setProjectError("");
+                                setProjectSuccess("");
+                                setShowCreateProject(true);
+                            }}
+                        >
+                            + Create Project
+                        </button>
+                    </div>
+
+                    {showCreateProject && (
+                        <div>
+                            <h3>Create New Project</h3>
+
+                            <form onSubmit={handleCreateProject}>
+                                <div>
+                                    <label htmlFor="projectName">
+                                        Project Name
+                                    </label>
+
+                                    <input
+                                        id="projectName"
+                                        type="text"
+                                        value={projectName}
+                                        onChange={(event) =>
+                                            setProjectName(event.target.value)
+                                        }
+                                        placeholder="Enter project name"
+                                        disabled={creatingProject}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label htmlFor="projectDescription">
+                                        Description
+                                    </label>
+
+                                    <textarea
+                                        id="projectDescription"
+                                        value={projectDescription}
+                                        onChange={(event) =>
+                                            setProjectDescription(event.target.value)
+                                        }
+                                        placeholder="Enter project description"
+                                        rows={4}
+                                        disabled={creatingProject}
+                                    />
+                                </div>
+
+                                {projectError && (
+                                    <p>{projectError}</p>
+                                )}
+
+                                {projectSuccess && (
+                                    <p>{projectSuccess}</p>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={creatingProject}
+                                >
+                                    {creatingProject
+                                        ? "Creating..."
+                                        : "Create Project"}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCreateProject(false)}
+                                    disabled={creatingProject}
+                                >
+                                    Cancel
+                                </button>
+                            </form>
+                        </div>
+                    )}
 
                     {team.projects.length === 0 ? (
                         <div>
                             <p>No projects yet.</p>
-
-                            <button>
-                                + Create Project
-                            </button>
                         </div>
                     ) : (
                         <div>
@@ -356,6 +491,10 @@ const TeamDetails = () => {
                                     <p>
                                         Tasks: {project._count.tasks}
                                     </p>
+
+                                    <button>
+                                        View Project
+                                    </button>
                                 </article>
                             ))}
                         </div>
