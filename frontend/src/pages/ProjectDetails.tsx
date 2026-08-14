@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import type { FormEvent } from "react";
 import api from "../services/api";
 
 interface Task {
@@ -51,19 +52,51 @@ const ProjectDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Create task form
+  // =========================================================
+  // CREATE TASK STATE
+  // =========================================================
+
   const [showCreateTask, setShowCreateTask] = useState(false);
+
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
+
   const [taskPriority, setTaskPriority] = useState<
     "LOW" | "MEDIUM" | "HIGH" | "URGENT"
   >("MEDIUM");
+
   const [taskDueDate, setTaskDueDate] = useState("");
   const [taskAssigneeId, setTaskAssigneeId] = useState("");
 
   const [creatingTask, setCreatingTask] = useState(false);
   const [createTaskError, setCreateTaskError] = useState("");
   const [createTaskSuccess, setCreateTaskSuccess] = useState("");
+
+  // =========================================================
+  // EDIT TASK STATE
+  // =========================================================
+
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(
+    null
+  );
+
+  const [editTaskTitle, setEditTaskTitle] = useState("");
+  const [editTaskDescription, setEditTaskDescription] = useState("");
+
+  const [editTaskPriority, setEditTaskPriority] = useState<
+    "LOW" | "MEDIUM" | "HIGH" | "URGENT"
+  >("MEDIUM");
+
+  const [editTaskDueDate, setEditTaskDueDate] = useState("");
+  const [editTaskAssigneeId, setEditTaskAssigneeId] = useState("");
+
+  const [updatingTask, setUpdatingTask] = useState(false);
+  const [updateTaskError, setUpdateTaskError] = useState("");
+  const [updateTaskSuccess, setUpdateTaskSuccess] = useState("");
+
+  // =========================================================
+  // LOAD PROJECT
+  // =========================================================
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -81,9 +114,7 @@ const ProjectDetails = () => {
       }
 
       try {
-        /*
-         * Load all teams available to the current user.
-         */
+        // Load teams
         const teamsResponse = await api.get("/teams");
 
         const teams = teamsResponse.data.teams || [];
@@ -91,9 +122,7 @@ const ProjectDetails = () => {
         let foundProject: Project | null = null;
         let foundMembers: TeamMember[] = [];
 
-        /*
-         * Find the team containing this project.
-         */
+        // Find the team containing this project
         for (const team of teams) {
           try {
             const response = await api.get(`/teams/${team.id}`);
@@ -134,13 +163,7 @@ const ProjectDetails = () => {
           return;
         }
 
-        /*
-         * The current project API gives task counts rather
-         * than complete task records.
-         *
-         * We keep the existing optional task-list request.
-         * If it is not implemented yet, the project still loads.
-         */
+        // Load complete task records
         try {
           const tasksResponse = await api.get(
             `/projects/${projectId}/tasks`
@@ -154,11 +177,8 @@ const ProjectDetails = () => {
             taskError
           );
 
-          /*
-           * Keep the existing task data if available.
-           * Otherwise use an empty list.
-           */
-          foundProject.tasks = foundProject.tasks || [];
+          foundProject.tasks =
+            foundProject.tasks || [];
         }
 
         setProject(foundProject);
@@ -181,6 +201,10 @@ const ProjectDetails = () => {
     fetchProject();
   }, [projectId, navigate]);
 
+  // =========================================================
+  // CREATE TASK
+  // =========================================================
+
   const handleCreateTask = () => {
     setTaskTitle("");
     setTaskDescription("");
@@ -195,7 +219,7 @@ const ProjectDetails = () => {
   };
 
   const handleCreateTaskSubmit = async (
-    event: React.FormEvent<HTMLFormElement>
+    event: FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
@@ -227,9 +251,7 @@ const ProjectDetails = () => {
 
       const createdTask: Task = response.data.task;
 
-      /*
-       * Immediately add the created task to the UI.
-       */
+      // Add the newly created task immediately
       setProject((currentProject) => {
         if (!currentProject) {
           return currentProject;
@@ -254,9 +276,6 @@ const ProjectDetails = () => {
       setTaskDueDate("");
       setTaskAssigneeId("");
 
-      /*
-       * Close the form shortly after successful creation.
-       */
       setTimeout(() => {
         setShowCreateTask(false);
         setCreateTaskSuccess("");
@@ -276,6 +295,141 @@ const ProjectDetails = () => {
     }
   };
 
+  // =========================================================
+  // START EDITING TASK
+  // =========================================================
+
+  const handleEditTask = (task: Task) => {
+    setEditingTaskId(task.id);
+
+    setEditTaskTitle(task.title);
+    setEditTaskDescription(
+      task.description || ""
+    );
+
+    setEditTaskPriority(task.priority);
+
+    if (task.dueDate) {
+      setEditTaskDueDate(
+        new Date(task.dueDate)
+          .toISOString()
+          .split("T")[0]
+      );
+    } else {
+      setEditTaskDueDate("");
+    }
+
+    setEditTaskAssigneeId(
+      task.assignee?.id || ""
+    );
+
+    setUpdateTaskError("");
+    setUpdateTaskSuccess("");
+  };
+
+  // =========================================================
+  // CANCEL EDIT
+  // =========================================================
+
+  const handleCancelEdit = () => {
+    setEditingTaskId(null);
+
+    setEditTaskTitle("");
+    setEditTaskDescription("");
+    setEditTaskPriority("MEDIUM");
+    setEditTaskDueDate("");
+    setEditTaskAssigneeId("");
+
+    setUpdateTaskError("");
+    setUpdateTaskSuccess("");
+  };
+
+  // =========================================================
+  // UPDATE TASK
+  // =========================================================
+
+  const handleUpdateTaskSubmit = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    if (!editingTaskId) {
+      return;
+    }
+
+    if (!editTaskTitle.trim()) {
+      setUpdateTaskError(
+        "Task title is required."
+      );
+      return;
+    }
+
+    try {
+      setUpdatingTask(true);
+      setUpdateTaskError("");
+      setUpdateTaskSuccess("");
+
+      const response = await api.put(
+        `/tasks/${editingTaskId}`,
+        {
+          title: editTaskTitle.trim(),
+          description:
+            editTaskDescription.trim(),
+          priority: editTaskPriority,
+          dueDate:
+            editTaskDueDate || null,
+          assigneeId:
+            editTaskAssigneeId || null,
+        }
+      );
+
+      const updatedTask: Task =
+        response.data.task;
+
+      // Replace the old task with updated task
+      setProject((currentProject) => {
+        if (!currentProject) {
+          return currentProject;
+        }
+
+        return {
+          ...currentProject,
+          tasks:
+            currentProject.tasks.map(
+              (task) =>
+                task.id === updatedTask.id
+                  ? updatedTask
+                  : task
+            ),
+        };
+      });
+
+      setUpdateTaskSuccess(
+        "Task updated successfully!"
+      );
+
+      setTimeout(() => {
+        handleCancelEdit();
+      }, 1000);
+    } catch (error: any) {
+      console.error(
+        "Update task failed:",
+        error
+      );
+
+      setUpdateTaskError(
+        error.response?.data?.message ||
+          "Failed to update task. Please try again."
+      );
+    } finally {
+      setUpdatingTask(false);
+    }
+  };
+
+  // =========================================================
+  // LOADING
+  // =========================================================
+
   if (loading) {
     return (
       <div>
@@ -285,6 +439,10 @@ const ProjectDetails = () => {
     );
   }
 
+  // =========================================================
+  // ERROR
+  // =========================================================
+
   if (error) {
     return (
       <div>
@@ -293,7 +451,9 @@ const ProjectDetails = () => {
         <p>{error}</p>
 
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() =>
+            navigate("/dashboard")
+          }
         >
           Back to Dashboard
         </button>
@@ -309,7 +469,9 @@ const ProjectDetails = () => {
         <p>Project not found.</p>
 
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() =>
+            navigate("/dashboard")
+          }
         >
           Back to Dashboard
         </button>
@@ -317,12 +479,18 @@ const ProjectDetails = () => {
     );
   }
 
+  // =========================================================
+  // UI
+  // =========================================================
+
   return (
     <div>
       <header>
         <button
           onClick={() =>
-            navigate(`/teams/${project.teamId}`)
+            navigate(
+              `/teams/${project.teamId}`
+            )
           }
         >
           ← Back to Team
@@ -332,6 +500,10 @@ const ProjectDetails = () => {
       </header>
 
       <main>
+        {/* =====================================================
+            PROJECT INFORMATION
+        ====================================================== */}
+
         <section>
           <h2>{project.name}</h2>
 
@@ -352,21 +524,33 @@ const ProjectDetails = () => {
           </p>
         </section>
 
+        {/* =====================================================
+            TASKS SECTION
+        ====================================================== */}
+
         <section>
           <div>
             <h2>Tasks</h2>
 
-            <button onClick={handleCreateTask}>
+            <button
+              onClick={handleCreateTask}
+            >
               + Create Task
             </button>
           </div>
+
+          {/* ===================================================
+              CREATE TASK FORM
+          ==================================================== */}
 
           {showCreateTask && (
             <section>
               <h3>Create New Task</h3>
 
               <form
-                onSubmit={handleCreateTaskSubmit}
+                onSubmit={
+                  handleCreateTaskSubmit
+                }
               >
                 <div>
                   <label htmlFor="taskTitle">
@@ -383,7 +567,9 @@ const ProjectDetails = () => {
                       )
                     }
                     placeholder="Enter task title"
-                    disabled={creatingTask}
+                    disabled={
+                      creatingTask
+                    }
                   />
                 </div>
 
@@ -402,7 +588,9 @@ const ProjectDetails = () => {
                     }
                     placeholder="Enter task description"
                     rows={4}
-                    disabled={creatingTask}
+                    disabled={
+                      creatingTask
+                    }
                   />
                 </div>
 
@@ -423,7 +611,9 @@ const ProjectDetails = () => {
                           | "URGENT"
                       )
                     }
-                    disabled={creatingTask}
+                    disabled={
+                      creatingTask
+                    }
                   >
                     <option value="LOW">
                       Low
@@ -457,7 +647,9 @@ const ProjectDetails = () => {
                         event.target.value
                       )
                     }
-                    disabled={creatingTask}
+                    disabled={
+                      creatingTask
+                    }
                   />
                 </div>
 
@@ -474,35 +666,52 @@ const ProjectDetails = () => {
                         event.target.value
                       )
                     }
-                    disabled={creatingTask}
+                    disabled={
+                      creatingTask
+                    }
                   >
                     <option value="">
                       Unassigned
                     </option>
 
-                    {members.map((member) => (
-                      <option
-                        key={member.user.id}
-                        value={member.user.id}
-                      >
-                        {member.user.name} (
-                        {member.role})
-                      </option>
-                    ))}
+                    {members.map(
+                      (member) => (
+                        <option
+                          key={
+                            member.user.id
+                          }
+                          value={
+                            member.user.id
+                          }
+                        >
+                          {
+                            member.user
+                              .name
+                          }{" "}
+                          ({member.role})
+                        </option>
+                      )
+                    )}
                   </select>
                 </div>
 
                 {createTaskError && (
-                  <p>{createTaskError}</p>
+                  <p>
+                    {createTaskError}
+                  </p>
                 )}
 
                 {createTaskSuccess && (
-                  <p>{createTaskSuccess}</p>
+                  <p>
+                    {createTaskSuccess}
+                  </p>
                 )}
 
                 <button
                   type="submit"
-                  disabled={creatingTask}
+                  disabled={
+                    creatingTask
+                  }
                 >
                   {creatingTask
                     ? "Creating..."
@@ -512,9 +721,13 @@ const ProjectDetails = () => {
                 <button
                   type="button"
                   onClick={() =>
-                    setShowCreateTask(false)
+                    setShowCreateTask(
+                      false
+                    )
                   }
-                  disabled={creatingTask}
+                  disabled={
+                    creatingTask
+                  }
                 >
                   Cancel
                 </button>
@@ -522,56 +735,357 @@ const ProjectDetails = () => {
             </section>
           )}
 
+          {/* ===================================================
+              NO TASKS
+          ==================================================== */}
+
           {project.tasks.length === 0 && (
             <div>
               <p>No tasks yet.</p>
 
               <p>
-                Create your first task to start
-                working on this project.
+                Create your first task to
+                start working on this
+                project.
               </p>
             </div>
           )}
 
+          {/* ===================================================
+              TASK LIST
+          ==================================================== */}
+
           {project.tasks.length > 0 && (
             <div>
-              {project.tasks.map((task) => (
-                <article key={task.id}>
-                  <h3>{task.title}</h3>
+              {project.tasks.map(
+                (task) => (
+                  <article
+                    key={task.id}
+                  >
+                    {/* ================================
+                        TASK INFORMATION
+                    ================================= */}
 
-                  <p>
-                    {task.description ||
-                      "No description provided."}
-                  </p>
+                    <h3>
+                      {task.title}
+                    </h3>
 
-                  <p>
-                    Status:{" "}
-                    <strong>{task.status}</strong>
-                  </p>
-
-                  <p>
-                    Priority:{" "}
-                    <strong>{task.priority}</strong>
-                  </p>
-
-                  <p>
-                    Assignee:{" "}
-                    <strong>
-                      {task.assignee?.name ||
-                        "Unassigned"}
-                    </strong>
-                  </p>
-
-                  {task.dueDate && (
                     <p>
-                      Due:{" "}
-                      {new Date(
-                        task.dueDate
-                      ).toLocaleDateString()}
+                      {task.description ||
+                        "No description provided."}
                     </p>
-                  )}
-                </article>
-              ))}
+
+                    <p>
+                      Status:{" "}
+                      <strong>
+                        {task.status}
+                      </strong>
+                    </p>
+
+                    <p>
+                      Priority:{" "}
+                      <strong>
+                        {task.priority}
+                      </strong>
+                    </p>
+
+                    <p>
+                      Assignee:{" "}
+                      <strong>
+                        {task.assignee
+                          ?.name ||
+                          "Unassigned"}
+                      </strong>
+                    </p>
+
+                    {task.dueDate && (
+                      <p>
+                        Due:{" "}
+                        {new Date(
+                          task.dueDate
+                        ).toLocaleDateString()}
+                      </p>
+                    )}
+
+                    {/* ================================
+                        EDIT TASK BUTTON
+                    ================================= */}
+
+                    <button
+                      onClick={() =>
+                        handleEditTask(
+                          task
+                        )
+                      }
+                    >
+                      Edit Task
+                    </button>
+
+                    {/* ================================
+                        EDIT TASK FORM
+                    ================================= */}
+
+                    {editingTaskId ===
+                      task.id && (
+                      <section>
+                        <h4>
+                          Edit Task
+                        </h4>
+
+                        <form
+                          onSubmit={
+                            handleUpdateTaskSubmit
+                          }
+                        >
+                          {/* TITLE */}
+
+                          <div>
+                            <label
+                              htmlFor={`edit-title-${task.id}`}
+                            >
+                              Title
+                            </label>
+
+                            <input
+                              id={`edit-title-${task.id}`}
+                              type="text"
+                              value={
+                                editTaskTitle
+                              }
+                              onChange={(
+                                event
+                              ) =>
+                                setEditTaskTitle(
+                                  event
+                                    .target
+                                    .value
+                                )
+                              }
+                              disabled={
+                                updatingTask
+                              }
+                            />
+                          </div>
+
+                          {/* DESCRIPTION */}
+
+                          <div>
+                            <label
+                              htmlFor={`edit-description-${task.id}`}
+                            >
+                              Description
+                            </label>
+
+                            <textarea
+                              id={`edit-description-${task.id}`}
+                              value={
+                                editTaskDescription
+                              }
+                              onChange={(
+                                event
+                              ) =>
+                                setEditTaskDescription(
+                                  event
+                                    .target
+                                    .value
+                                )
+                              }
+                              rows={4}
+                              disabled={
+                                updatingTask
+                              }
+                            />
+                          </div>
+
+                          {/* PRIORITY */}
+
+                          <div>
+                            <label
+                              htmlFor={`edit-priority-${task.id}`}
+                            >
+                              Priority
+                            </label>
+
+                            <select
+                              id={`edit-priority-${task.id}`}
+                              value={
+                                editTaskPriority
+                              }
+                              onChange={(
+                                event
+                              ) =>
+                                setEditTaskPriority(
+                                  event
+                                    .target
+                                    .value as
+                                    | "LOW"
+                                    | "MEDIUM"
+                                    | "HIGH"
+                                    | "URGENT"
+                                )
+                              }
+                              disabled={
+                                updatingTask
+                              }
+                            >
+                              <option value="LOW">
+                                Low
+                              </option>
+
+                              <option value="MEDIUM">
+                                Medium
+                              </option>
+
+                              <option value="HIGH">
+                                High
+                              </option>
+
+                              <option value="URGENT">
+                                Urgent
+                              </option>
+                            </select>
+                          </div>
+
+                          {/* DUE DATE */}
+
+                          <div>
+                            <label
+                              htmlFor={`edit-due-date-${task.id}`}
+                            >
+                              Due Date
+                            </label>
+
+                            <input
+                              id={`edit-due-date-${task.id}`}
+                              type="date"
+                              value={
+                                editTaskDueDate
+                              }
+                              onChange={(
+                                event
+                              ) =>
+                                setEditTaskDueDate(
+                                  event
+                                    .target
+                                    .value
+                                )
+                              }
+                              disabled={
+                                updatingTask
+                              }
+                            />
+                          </div>
+
+                          {/* ASSIGNEE */}
+
+                          <div>
+                            <label
+                              htmlFor={`edit-assignee-${task.id}`}
+                            >
+                              Assignee
+                            </label>
+
+                            <select
+                              id={`edit-assignee-${task.id}`}
+                              value={
+                                editTaskAssigneeId
+                              }
+                              onChange={(
+                                event
+                              ) =>
+                                setEditTaskAssigneeId(
+                                  event
+                                    .target
+                                    .value
+                                )
+                              }
+                              disabled={
+                                updatingTask
+                              }
+                            >
+                              <option value="">
+                                Unassigned
+                              </option>
+
+                              {members.map(
+                                (
+                                  member
+                                ) => (
+                                  <option
+                                    key={
+                                      member
+                                        .user
+                                        .id
+                                    }
+                                    value={
+                                      member
+                                        .user
+                                        .id
+                                    }
+                                  >
+                                    {
+                                      member
+                                        .user
+                                        .name
+                                    }
+                                  </option>
+                                )
+                              )}
+                            </select>
+                          </div>
+
+                          {/* ERROR */}
+
+                          {updateTaskError && (
+                            <p>
+                              {
+                                updateTaskError
+                              }
+                            </p>
+                          )}
+
+                          {/* SUCCESS */}
+
+                          {updateTaskSuccess && (
+                            <p>
+                              {
+                                updateTaskSuccess
+                              }
+                            </p>
+                          )}
+
+                          {/* SAVE */}
+
+                          <button
+                            type="submit"
+                            disabled={
+                              updatingTask
+                            }
+                          >
+                            {updatingTask
+                              ? "Saving..."
+                              : "Save Changes"}
+                          </button>
+
+                          {/* CANCEL */}
+
+                          <button
+                            type="button"
+                            onClick={
+                              handleCancelEdit
+                            }
+                            disabled={
+                              updatingTask
+                            }
+                          >
+                            Cancel
+                          </button>
+                        </form>
+                      </section>
+                    )}
+                  </article>
+                )
+              )}
             </div>
           )}
         </section>
