@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.middleware";
 import { createTask,
-  getProjectTasks,updateTask, updateTaskStatus
+  getProjectTasks,updateTask, updateTaskStatus, deleteTask
 } from "../controllers/task.controller";
 
 const router = Router();
@@ -28,6 +28,12 @@ router.patch(
   "/tasks/:taskId/status",
   authenticate,
   updateTaskStatus
+);
+
+router.delete(
+  "/tasks/:taskId",
+  authenticate,
+  deleteTask
 );
 
 export default router;

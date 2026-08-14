@@ -468,6 +468,41 @@ const ProjectDetails = () => {
             );
         }
     };
+
+    const handleDeleteTask = async (taskId: string) => {
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this task?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await api.delete(`/tasks/${taskId}`);
+
+    setProject((currentProject) => {
+      if (!currentProject) {
+        return currentProject;
+      }
+
+      return {
+        ...currentProject,
+        tasks: currentProject.tasks.filter(
+          (task) => task.id !== taskId
+        ),
+      };
+    });
+  } catch (error: any) {
+    console.error("Delete task failed:", error);
+
+    alert(
+      error.response?.data?.message ||
+        "Failed to delete task. Please try again."
+    );
+  }
+};
+
     // =========================================================
     // LOADING
     // =========================================================
@@ -888,6 +923,12 @@ const ProjectDetails = () => {
                                         >
                                             Edit Task
                                         </button>
+
+                                        <button
+  onClick={() => handleDeleteTask(task.id)}
+>
+  Delete Task
+</button>
 
                                         {/* ================================
                         EDIT TASK FORM
