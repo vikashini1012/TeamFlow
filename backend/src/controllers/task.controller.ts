@@ -331,3 +331,109 @@ export const updateTask = async (
     });
   }
 };
+
+export const updateTaskStatus = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({
+        message: "Authentication required",
+      });
+    }
+
+    const taskId = req.params.taskId;
+
+    if (typeof taskId !== "string") {
+      return res.status(400).json({
+        message: "Invalid task ID",
+      });
+    }
+
+    const { status } = req.body;
+
+    const validStatuses = [
+      "TODO",
+      "IN_PROGRESS",
+      "IN_REVIEW",
+      "DONE",
+    ];
+
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid task status",
+      });
+    }
+
+    // Find the task and its project/team
+    const existingTask = await prisma.task.findUnique({
+      where: {
+        id: taskId,
+      },
+      include: {
+        project: {
+          select: {
+            teamId: true,
+          },
+        },
+      },
+    });
+
+    if (!existingTask) {
+      return res.status(404).json({
+        message: "Task not found",
+      });
+    }
+
+    // Verify that the requester belongs to the team
+    const membership = await prisma.teamMember.findUnique({
+      where: {
+        userId_teamId: {
+          userId: req.userId,
+          teamId: existingTask.project.teamId,
+        },
+      },
+    });
+
+    if (!membership) {
+      return res.status(403).json({
+        message: "You are not a member of this team",
+      });
+    }
+
+    // Update task status
+    const task = await prisma.task.update({
+      where: {
+        id: taskId,
+      },
+      data: {
+        status,
+      },
+      include: {
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    return res.status(200).json({
+      message: "Task status updated successfully",
+      task,
+    });
+  } catch (error) {
+    console.error(
+      "Update task status error:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
