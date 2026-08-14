@@ -492,7 +492,11 @@ const TeamDetails = () => {
                                         Tasks: {project._count.tasks}
                                     </p>
 
-                                    <button>
+                                    <button
+                                        onClick={() =>
+                                            navigate(`/projects/${project.id}`)
+                                        }
+                                    >
                                         View Project
                                     </button>
                                 </article>
