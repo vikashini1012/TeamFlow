@@ -121,3 +121,87 @@ export const createTask = async (
     });
   }
 };
+
+export const getProjectTasks = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({
+        message: "Authentication required",
+      });
+    }
+
+    const projectId = req.params.projectId;
+
+    if (typeof projectId !== "string") {
+      return res.status(400).json({
+        message: "Invalid project ID",
+      });
+    }
+
+    // Find the project and its team
+    const project = await prisma.project.findUnique({
+      where: {
+        id: projectId,
+      },
+      select: {
+        id: true,
+        teamId: true,
+      },
+    });
+
+    if (!project) {
+      return res.status(404).json({
+        message: "Project not found",
+      });
+    }
+
+    // Check whether requester belongs to the team
+    const membership = await prisma.teamMember.findUnique({
+      where: {
+        userId_teamId: {
+          userId: req.userId,
+          teamId: project.teamId,
+        },
+      },
+    });
+
+    if (!membership) {
+      return res.status(403).json({
+        message: "You are not a member of this team",
+      });
+    }
+
+    // Get all tasks belonging to the project
+    const tasks = await prisma.task.findMany({
+      where: {
+        projectId,
+      },
+      include: {
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return res.status(200).json({
+      tasks,
+    });
+  } catch (error) {
+    console.error("Get project tasks error:", error);
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
