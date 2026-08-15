@@ -3,6 +3,8 @@ import { authenticate } from "../middleware/auth.middleware";
 import {
   createProject,
   getTeamProjects,
+  updateProject,
+  deleteProject,
 } from "../controllers/project.controller";
 
 const router = Router();
@@ -17,6 +19,18 @@ router.get(
   "/teams/:teamId/projects",
   authenticate,
   getTeamProjects
+);
+
+router.put(
+  "/projects/:projectId",
+  authenticate,
+  updateProject
+);
+
+router.delete(
+  "/projects/:projectId",
+  authenticate,
+  deleteProject
 );
 
 export default router;

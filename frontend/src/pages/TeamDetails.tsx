@@ -59,6 +59,30 @@ const TeamDetails = () => {
     const [projectError, setProjectError] = useState("");
     const [projectSuccess, setProjectSuccess] = useState("");
 
+    const [editingProjectId, setEditingProjectId] =
+    useState<string | null>(null);
+
+const [editProjectName, setEditProjectName] =
+    useState("");
+
+const [editProjectDescription, setEditProjectDescription] =
+    useState("");
+
+const [updatingProject, setUpdatingProject] =
+    useState(false);
+
+const [updateProjectError, setUpdateProjectError] =
+    useState("");
+
+const [updateProjectSuccess, setUpdateProjectSuccess] =
+    useState("");
+
+const [deletingProjectId, setDeletingProjectId] =
+    useState<string | null>(null);
+
+const [deleteProjectError, setDeleteProjectError] =
+    useState("");
+
     useEffect(() => {
         const fetchTeam = async () => {
             const token = localStorage.getItem("teamflow_token");
@@ -193,6 +217,111 @@ const TeamDetails = () => {
             );
         } finally {
             setCreatingProject(false);
+        }
+    };
+
+
+    const handleEditProject = (project: Project) => {
+        setEditingProjectId(project.id);
+        setEditProjectName(project.name);
+        setEditProjectDescription(project.description || "");
+        setUpdateProjectError("");
+        setUpdateProjectSuccess("");
+        setDeleteProjectError("");
+    };
+
+    const handleCancelEditProject = () => {
+        setEditingProjectId(null);
+        setEditProjectName("");
+        setEditProjectDescription("");
+        setUpdateProjectError("");
+        setUpdateProjectSuccess("");
+    };
+
+    const handleUpdateProject = async (
+        event: FormEvent<HTMLFormElement>
+    ) => {
+        event.preventDefault();
+
+        if (!editingProjectId) {
+            return;
+        }
+
+        if (!editProjectName.trim()) {
+            setUpdateProjectError("Project name is required.");
+            return;
+        }
+
+        try {
+            setUpdatingProject(true);
+            setUpdateProjectError("");
+            setUpdateProjectSuccess("");
+
+            await api.put(`/projects/${editingProjectId}`, {
+                name: editProjectName.trim(),
+                description: editProjectDescription.trim(),
+            });
+
+            setUpdateProjectSuccess("Project updated successfully!");
+
+            const response = await api.get(`/teams/${teamId}`);
+            setTeam(response.data.team);
+
+            setTimeout(() => {
+                handleCancelEditProject();
+            }, 800);
+        } catch (error: any) {
+            console.error("Failed to update project:", error);
+
+            setUpdateProjectError(
+                error.response?.data?.message ||
+                "Failed to update project. Please try again."
+            );
+        } finally {
+            setUpdatingProject(false);
+        }
+    };
+
+    const handleDeleteProject = async (project: Project) => {
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${project.name}"? This action cannot be undone.`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            setDeletingProjectId(project.id);
+            setDeleteProjectError("");
+
+            await api.delete(`/projects/${project.id}`);
+
+            setTeam((currentTeam) => {
+                if (!currentTeam) {
+                    return currentTeam;
+                }
+
+                return {
+                    ...currentTeam,
+                    projects: currentTeam.projects.filter(
+                        (item) => item.id !== project.id
+                    ),
+                };
+            });
+
+            if (editingProjectId === project.id) {
+                handleCancelEditProject();
+            }
+        } catch (error: any) {
+            console.error("Failed to delete project:", error);
+
+            setDeleteProjectError(
+                error.response?.data?.message ||
+                "Failed to delete project. Please try again."
+            );
+        } finally {
+            setDeletingProjectId(null);
         }
     };
 
@@ -479,26 +608,133 @@ const TeamDetails = () => {
                         </div>
                     ) : (
                         <div>
+                            {deleteProjectError && (
+                                <p>{deleteProjectError}</p>
+                            )}
+
                             {team.projects.map((project) => (
                                 <article key={project.id}>
-                                    <h3>{project.name}</h3>
+                                    {editingProjectId === project.id ? (
+                                        <div>
+                                            <h3>Edit Project</h3>
 
-                                    <p>
-                                        {project.description ||
-                                            "No description provided."}
-                                    </p>
+                                            <form onSubmit={handleUpdateProject}>
+                                                <div>
+                                                    <label
+                                                        htmlFor={`edit-project-name-${project.id}`}
+                                                    >
+                                                        Project Name
+                                                    </label>
 
-                                    <p>
-                                        Tasks: {project._count.tasks}
-                                    </p>
+                                                    <input
+                                                        id={`edit-project-name-${project.id}`}
+                                                        type="text"
+                                                        value={editProjectName}
+                                                        onChange={(event) =>
+                                                            setEditProjectName(
+                                                                event.target.value
+                                                            )
+                                                        }
+                                                        disabled={updatingProject}
+                                                    />
+                                                </div>
 
-                                    <button
-                                        onClick={() =>
-                                            navigate(`/projects/${project.id}`)
-                                        }
-                                    >
-                                        View Project
-                                    </button>
+                                                <div>
+                                                    <label
+                                                        htmlFor={`edit-project-description-${project.id}`}
+                                                    >
+                                                        Description
+                                                    </label>
+
+                                                    <textarea
+                                                        id={`edit-project-description-${project.id}`}
+                                                        value={editProjectDescription}
+                                                        onChange={(event) =>
+                                                            setEditProjectDescription(
+                                                                event.target.value
+                                                            )
+                                                        }
+                                                        rows={4}
+                                                        disabled={updatingProject}
+                                                    />
+                                                </div>
+
+                                                {updateProjectError && (
+                                                    <p>{updateProjectError}</p>
+                                                )}
+
+                                                {updateProjectSuccess && (
+                                                    <p>{updateProjectSuccess}</p>
+                                                )}
+
+                                                <button
+                                                    type="submit"
+                                                    disabled={updatingProject}
+                                                >
+                                                    {updatingProject
+                                                        ? "Saving..."
+                                                        : "Save Changes"}
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCancelEditProject}
+                                                    disabled={updatingProject}
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </form>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <h3>{project.name}</h3>
+
+                                            <p>
+                                                {project.description ||
+                                                    "No description provided."}
+                                            </p>
+
+                                            <p>
+                                                Tasks: {project._count.tasks}
+                                            </p>
+
+                                            <button
+                                                onClick={() =>
+                                                    navigate(
+                                                        `/projects/${project.id}`
+                                                    )
+                                                }
+                                            >
+                                                View Project
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleEditProject(project)
+                                                }
+                                                disabled={
+                                                    deletingProjectId === project.id
+                                                }
+                                            >
+                                                Edit Project
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleDeleteProject(project)
+                                                }
+                                                disabled={
+                                                    deletingProjectId === project.id
+                                                }
+                                            >
+                                                {deletingProjectId === project.id
+                                                    ? "Deleting..."
+                                                    : "Delete Project"}
+                                            </button>
+                                        </div>
+                                    )}
                                 </article>
                             ))}
                         </div>
