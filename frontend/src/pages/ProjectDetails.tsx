@@ -794,6 +794,41 @@ const ProjectDetails = () => {
               );
 
     // =========================================================
+    // ASSIGNEE WORKLOAD
+    // =========================================================
+
+    const assigneeWorkload = members.map((member) => {
+        const assignedTaskCount =
+            project?.tasks.filter(
+                (task) =>
+                    task.assignee?.id === member.user.id
+            ).length || 0;
+
+        return {
+            id: member.user.id,
+            name: member.user.name,
+            taskCount: assignedTaskCount,
+        };
+    });
+
+    const unassignedTaskCount =
+        project?.tasks.filter(
+            (task) => !task.assignee
+        ).length || 0;
+
+    const maxAssignedTaskCount =
+        assigneeWorkload.reduce(
+            (maximum, member) =>
+                Math.max(maximum, member.taskCount),
+            0
+        );
+
+    const workloadMaximum = Math.max(
+        maxAssignedTaskCount,
+        unassignedTaskCount
+    );
+
+    // =========================================================
     // TASK STATUS DISTRIBUTION
     // =========================================================
 
@@ -1048,6 +1083,94 @@ const ProjectDetails = () => {
                             {urgentPriorityPercentage}%
                         </progress>
                     </div>
+                </section>
+
+                {/* =====================================================
+            ASSIGNEE WORKLOAD
+        ====================================================== */}
+
+                <section>
+                    <h2>Assignee Workload</h2>
+
+                    {assigneeWorkload.length === 0 ? (
+                        <p>No team members found.</p>
+                    ) : (
+                        <div>
+                            {assigneeWorkload.map(
+                                (member) => {
+                                    const workloadPercentage =
+                                        workloadMaximum === 0
+                                            ? 0
+                                            : Math.round(
+                                                  (member.taskCount /
+                                                      workloadMaximum) *
+                                                      100
+                                              );
+
+                                    return (
+                                        <div
+                                            key={member.id}
+                                        >
+                                            <p>
+                                                <strong>
+                                                    {member.name}
+                                                </strong>{" "}
+                                                {member.taskCount}{" "}
+                                                {member.taskCount === 1
+                                                    ? "task"
+                                                    : "tasks"}
+                                            </p>
+
+                                            <progress
+                                                value={
+                                                    workloadPercentage
+                                                }
+                                                max={100}
+                                                aria-label={`${member.name} workload`}
+                                            >
+                                                {workloadPercentage}%
+                                            </progress>
+                                        </div>
+                                    );
+                                }
+                            )}
+
+                            <div>
+                                <p>
+                                    <strong>
+                                        Unassigned
+                                    </strong>{" "}
+                                    {unassignedTaskCount}{" "}
+                                    {unassignedTaskCount === 1
+                                        ? "task"
+                                        : "tasks"}
+                                </p>
+
+                                <progress
+                                    value={
+                                        workloadMaximum === 0
+                                            ? 0
+                                            : Math.round(
+                                                  (unassignedTaskCount /
+                                                      workloadMaximum) *
+                                                      100
+                                              )
+                                    }
+                                    max={100}
+                                    aria-label="Unassigned task workload"
+                                >
+                                    {workloadMaximum === 0
+                                        ? 0
+                                        : Math.round(
+                                              (unassignedTaskCount /
+                                                  workloadMaximum) *
+                                                  100
+                                          )}
+                                    %
+                                </progress>
+                            </div>
+                        </div>
+                    )}
                 </section>
 
                 {/* =====================================================
