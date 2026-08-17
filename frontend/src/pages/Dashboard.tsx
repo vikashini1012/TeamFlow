@@ -22,6 +22,28 @@ interface Team {
   createdAt: string;
 }
 
+interface DashboardAnalytics {
+  teamCount: number;
+  projectCount: number;
+
+  totalTasks: number;
+  todoTasks: number;
+  inProgressTasks: number;
+  inReviewTasks: number;
+  completedTasks: number;
+
+  overdueTasks: number;
+
+  completionPercentage: number;
+
+  priorityDistribution: {
+    LOW: number;
+    MEDIUM: number;
+    HIGH: number;
+    URGENT: number;
+  };
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
 
@@ -42,6 +64,9 @@ const Dashboard = () => {
   const [creatingTeam, setCreatingTeam] = useState(false);
   const [createTeamError, setCreateTeamError] = useState("");
   const [createTeamSuccess, setCreateTeamSuccess] = useState("");
+  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [analyticsError, setAnalyticsError] = useState("");
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -85,6 +110,28 @@ const Dashboard = () => {
         setTeamsError("Failed to load your teams.");
       } finally {
         setTeamsLoading(false);
+      }
+
+      // Fetch dashboard analytics
+      try {
+        const analyticsResponse = await api.get(
+          "/teams/analytics"
+        );
+
+        setAnalytics(
+          analyticsResponse.data.analytics
+        );
+      } catch (error) {
+        console.error(
+          "Failed to load dashboard analytics:",
+          error
+        );
+
+        setAnalyticsError(
+          "Failed to load productivity analytics."
+        );
+      } finally {
+        setAnalyticsLoading(false);
       }
     };
 
@@ -206,6 +253,88 @@ const Dashboard = () => {
             <p>{user.email}</p>
           </section>
         )}
+
+        {/* =====================================================
+            PRODUCTIVITY SUMMARY
+        ====================================================== */}
+
+        <section>
+          <h2>Productivity Summary</h2>
+
+          {analyticsLoading && (
+            <p>Loading productivity analytics...</p>
+          )}
+
+          {analyticsError && (
+            <p>{analyticsError}</p>
+          )}
+
+          {!analyticsLoading &&
+            !analyticsError &&
+            analytics && (
+              <div>
+                <div>
+                  <h3>Teams</h3>
+                  <p>{analytics.teamCount}</p>
+                </div>
+
+                <div>
+                  <h3>Projects</h3>
+                  <p>{analytics.projectCount}</p>
+                </div>
+
+                <div>
+                  <h3>Total Tasks</h3>
+                  <p>{analytics.totalTasks}</p>
+                </div>
+
+                <div>
+                  <h3>TODO</h3>
+                  <p>{analytics.todoTasks}</p>
+                </div>
+
+                <div>
+                  <h3>In Progress</h3>
+                  <p>{analytics.inProgressTasks}</p>
+                </div>
+
+                <div>
+                  <h3>In Review</h3>
+                  <p>{analytics.inReviewTasks}</p>
+                </div>
+
+                <div>
+                  <h3>Completed</h3>
+                  <p>{analytics.completedTasks}</p>
+                </div>
+
+                <div>
+                  <h3>Overdue</h3>
+                  <p>{analytics.overdueTasks}</p>
+                </div>
+
+                <div>
+                  <h3>Completion</h3>
+
+                  <p>
+                    <strong>
+                      {analytics.completionPercentage}%
+                    </strong>
+                  </p>
+
+                  <progress
+                    value={
+                      analytics.completionPercentage
+                    }
+                    max={100}
+                    aria-label="Overall task completion"
+                  >
+                    {analytics.completionPercentage}%
+                  </progress>
+                </div>
+              </div>
+            )}
+        </section>
 
         {/* Create Team form */}
         {showCreateTeam && (

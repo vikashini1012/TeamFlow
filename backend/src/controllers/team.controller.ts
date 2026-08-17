@@ -117,6 +117,145 @@ export const getMyTeams = async (
   }
 };
 
+export const getDashboardAnalytics = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({
+        message: "Authentication required",
+      });
+    }
+
+    const memberships = await prisma.teamMember.findMany({
+      where: {
+        userId: req.userId,
+      },
+      include: {
+        team: {
+          include: {
+            projects: {
+              include: {
+                tasks: {
+                  select: {
+                    id: true,
+                    status: true,
+                    priority: true,
+                    dueDate: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const projects = memberships.flatMap(
+      (membership) => membership.team.projects
+    );
+
+    const tasks = projects.flatMap(
+      (project) => project.tasks
+    );
+
+    const totalTasks = tasks.length;
+
+    const todoTasks = tasks.filter(
+      (task) => task.status === "TODO"
+    ).length;
+
+    const inProgressTasks = tasks.filter(
+      (task) => task.status === "IN_PROGRESS"
+    ).length;
+
+    const inReviewTasks = tasks.filter(
+      (task) => task.status === "IN_REVIEW"
+    ).length;
+
+    const completedTasks = tasks.filter(
+      (task) => task.status === "DONE"
+    ).length;
+
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+
+    const overdueTasks = tasks.filter((task) => {
+      if (!task.dueDate) {
+        return false;
+      }
+
+      if (task.status === "DONE") {
+        return false;
+      }
+
+      const dueDate = new Date(task.dueDate);
+
+      dueDate.setHours(0, 0, 0, 0);
+
+      return dueDate.getTime() < today.getTime();
+    }).length;
+
+    const completionPercentage =
+      totalTasks === 0
+        ? 0
+        : Math.round(
+            (completedTasks / totalTasks) * 100
+          );
+
+    const lowPriorityTasks = tasks.filter(
+      (task) => task.priority === "LOW"
+    ).length;
+
+    const mediumPriorityTasks = tasks.filter(
+      (task) => task.priority === "MEDIUM"
+    ).length;
+
+    const highPriorityTasks = tasks.filter(
+      (task) => task.priority === "HIGH"
+    ).length;
+
+    const urgentPriorityTasks = tasks.filter(
+      (task) => task.priority === "URGENT"
+    ).length;
+
+    return res.status(200).json({
+      analytics: {
+        teamCount: memberships.length,
+        projectCount: projects.length,
+
+        totalTasks,
+        todoTasks,
+        inProgressTasks,
+        inReviewTasks,
+        completedTasks,
+
+        overdueTasks,
+
+        completionPercentage,
+
+        priorityDistribution: {
+          LOW: lowPriorityTasks,
+          MEDIUM: mediumPriorityTasks,
+          HIGH: highPriorityTasks,
+          URGENT: urgentPriorityTasks,
+        },
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Get dashboard analytics error:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
 export const getTeamById = async (
   req: AuthRequest,
   res: Response

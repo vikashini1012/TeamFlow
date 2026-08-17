@@ -7,6 +7,7 @@ import {
   updateTeamMemberRole,
   removeTeamMember,
   updateTeam,
+  getDashboardAnalytics,
   deleteTeam,
 } from "../controllers/team.controller";
 import { authenticate } from "../middleware/auth.middleware";
@@ -23,6 +24,14 @@ router.get(
   "/",
   authenticate,
   getMyTeams
+);
+
+// IMPORTANT:
+// Keep specific routes before "/:id"
+router.get(
+  "/analytics",
+  authenticate,
+  getDashboardAnalytics
 );
 
 router.get(
