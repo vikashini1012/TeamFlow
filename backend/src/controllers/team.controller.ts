@@ -322,3 +322,159 @@ export const addTeamMember = async (
     });
   }
 };
+
+export const updateTeam = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({
+        message: "Authentication required",
+      });
+    }
+
+    const teamId = req.params.id;
+
+    if (typeof teamId !== "string") {
+      return res.status(400).json({
+        message: "Invalid team ID",
+      });
+    }
+
+    const { name, description } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        message: "Team name is required",
+      });
+    }
+
+    const membership = await prisma.teamMember.findUnique({
+      where: {
+        userId_teamId: {
+          userId: req.userId,
+          teamId,
+        },
+      },
+    });
+
+    if (!membership) {
+      return res.status(403).json({
+        message: "You are not a member of this team",
+      });
+    }
+
+    if (
+      membership.role !== "OWNER" &&
+      membership.role !== "ADMIN"
+    ) {
+      return res.status(403).json({
+        message:
+          "Only team owners and admins can update the team",
+      });
+    }
+
+    const updatedTeam = await prisma.team.update({
+      where: {
+        id: teamId,
+      },
+      data: {
+        name: name.trim(),
+        description: description?.trim() || null,
+      },
+    });
+
+    return res.status(200).json({
+      message: "Team updated successfully",
+      team: updatedTeam,
+    });
+  } catch (error: any) {
+    console.error("Update team error:", error);
+
+    if (error?.code === "P2002") {
+      return res.status(409).json({
+        message: "A team with this name already exists",
+      });
+    }
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+export const deleteTeam = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({
+        message: "Authentication required",
+      });
+    }
+
+    const teamId = req.params.id;
+
+    if (typeof teamId !== "string") {
+      return res.status(400).json({
+        message: "Invalid team ID",
+      });
+    }
+
+    const membership = await prisma.teamMember.findUnique({
+      where: {
+        userId_teamId: {
+          userId: req.userId,
+          teamId,
+        },
+      },
+    });
+
+    if (!membership) {
+      return res.status(403).json({
+        message: "You are not a member of this team",
+      });
+    }
+
+    // Only the team OWNER can delete the entire team.
+    if (membership.role !== "OWNER") {
+      return res.status(403).json({
+        message:
+          "Only the team owner can delete the team",
+      });
+    }
+
+    const team = await prisma.team.findUnique({
+      where: {
+        id: teamId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!team) {
+      return res.status(404).json({
+        message: "Team not found",
+      });
+    }
+
+    await prisma.team.delete({
+      where: {
+        id: teamId,
+      },
+    });
+
+    return res.status(200).json({
+      message: "Team deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete team error:", error);
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
