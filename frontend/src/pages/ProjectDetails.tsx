@@ -709,6 +709,39 @@ const ProjectDetails = () => {
     };
 
     // =========================================================
+    // PROJECT PROGRESS
+    // =========================================================
+
+    const totalTasks = project?.tasks.length || 0;
+
+    const todoTasks =
+        project?.tasks.filter(
+            (task) => task.status === "TODO"
+        ).length || 0;
+
+    const inProgressTasks =
+        project?.tasks.filter(
+            (task) => task.status === "IN_PROGRESS"
+        ).length || 0;
+
+    const inReviewTasks =
+        project?.tasks.filter(
+            (task) => task.status === "IN_REVIEW"
+        ).length || 0;
+
+    const completedTasks =
+        project?.tasks.filter(
+            (task) => task.status === "DONE"
+        ).length || 0;
+
+    const completionPercentage =
+        totalTasks === 0
+            ? 0
+            : Math.round(
+                  (completedTasks / totalTasks) * 100
+              );
+
+    // =========================================================
     // LOADING
     // =========================================================
 
@@ -804,6 +837,56 @@ const ProjectDetails = () => {
                     <p>
                         Tasks: {project.tasks.length}
                     </p>
+                </section>
+
+                {/* =====================================================
+            PROJECT PROGRESS
+        ====================================================== */}
+
+                <section>
+                    <h2>Project Progress</h2>
+
+                    <div>
+                        <p>
+                            Total Tasks:{" "}
+                            <strong>{totalTasks}</strong>
+                        </p>
+
+                        <p>
+                            TODO:{" "}
+                            <strong>{todoTasks}</strong>
+                        </p>
+
+                        <p>
+                            In Progress:{" "}
+                            <strong>{inProgressTasks}</strong>
+                        </p>
+
+                        <p>
+                            In Review:{" "}
+                            <strong>{inReviewTasks}</strong>
+                        </p>
+
+                        <p>
+                            Completed:{" "}
+                            <strong>{completedTasks}</strong>
+                        </p>
+
+                        <p>
+                            Completion:{" "}
+                            <strong>
+                                {completionPercentage}%
+                            </strong>
+                        </p>
+
+                        <progress
+                            value={completionPercentage}
+                            max={100}
+                            aria-label="Project completion progress"
+                        >
+                            {completionPercentage}%
+                        </progress>
+                    </div>
                 </section>
 
                 {/* =====================================================
