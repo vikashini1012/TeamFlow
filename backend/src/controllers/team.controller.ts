@@ -162,6 +162,10 @@ export const getDashboardAnalytics = async (
 
     const totalTasks = tasks.length;
 
+    // =========================================================
+    // TASK STATUS COUNTS
+    // =========================================================
+
     const todoTasks = tasks.filter(
       (task) => task.status === "TODO"
     ).length;
@@ -177,6 +181,10 @@ export const getDashboardAnalytics = async (
     const completedTasks = tasks.filter(
       (task) => task.status === "DONE"
     ).length;
+
+    // =========================================================
+    // OVERDUE TASKS
+    // =========================================================
 
     const today = new Date();
 
@@ -198,12 +206,20 @@ export const getDashboardAnalytics = async (
       return dueDate.getTime() < today.getTime();
     }).length;
 
+    // =========================================================
+    // COMPLETION PERCENTAGE
+    // =========================================================
+
     const completionPercentage =
       totalTasks === 0
         ? 0
         : Math.round(
             (completedTasks / totalTasks) * 100
           );
+
+    // =========================================================
+    // PRIORITY COUNTS
+    // =========================================================
 
     const lowPriorityTasks = tasks.filter(
       (task) => task.priority === "LOW"
@@ -221,6 +237,28 @@ export const getDashboardAnalytics = async (
       (task) => task.priority === "URGENT"
     ).length;
 
+    // =========================================================
+    // STATUS DISTRIBUTION
+    // =========================================================
+
+    const statusDistribution = {
+      TODO: todoTasks,
+      IN_PROGRESS: inProgressTasks,
+      IN_REVIEW: inReviewTasks,
+      DONE: completedTasks,
+    };
+
+    // =========================================================
+    // PRIORITY DISTRIBUTION
+    // =========================================================
+
+    const priorityDistribution = {
+      LOW: lowPriorityTasks,
+      MEDIUM: mediumPriorityTasks,
+      HIGH: highPriorityTasks,
+      URGENT: urgentPriorityTasks,
+    };
+
     return res.status(200).json({
       analytics: {
         teamCount: memberships.length,
@@ -236,12 +274,9 @@ export const getDashboardAnalytics = async (
 
         completionPercentage,
 
-        priorityDistribution: {
-          LOW: lowPriorityTasks,
-          MEDIUM: mediumPriorityTasks,
-          HIGH: highPriorityTasks,
-          URGENT: urgentPriorityTasks,
-        },
+        statusDistribution,
+
+        priorityDistribution,
       },
     });
   } catch (error) {
@@ -269,11 +304,11 @@ export const getTeamById = async (
 
     const id = req.params.id;
 
-if (typeof id !== "string") {
-  return res.status(400).json({
-    message: "Invalid team ID",
-  });
-}
+    if (typeof id !== "string") {
+      return res.status(400).json({
+        message: "Invalid team ID",
+      });
+    }
 
     const membership = await prisma.teamMember.findUnique({
       where: {
@@ -370,15 +405,15 @@ export const addTeamMember = async (
       });
     }
 
-    // Check whether the requester belongs to the team
-    const requesterMembership = await prisma.teamMember.findUnique({
-      where: {
-        userId_teamId: {
-          userId: req.userId,
-          teamId,
+    const requesterMembership =
+      await prisma.teamMember.findUnique({
+        where: {
+          userId_teamId: {
+            userId: req.userId,
+            teamId,
+          },
         },
-      },
-    });
+      });
 
     if (!requesterMembership) {
       return res.status(403).json({
@@ -386,7 +421,6 @@ export const addTeamMember = async (
       });
     }
 
-    // Only OWNER and ADMIN can add members
     if (
       requesterMembership.role !== "OWNER" &&
       requesterMembership.role !== "ADMIN"
@@ -396,7 +430,6 @@ export const addTeamMember = async (
       });
     }
 
-    // Find the user being added
     const user = await prisma.user.findUnique({
       where: {
         email: email.trim().toLowerCase(),
@@ -409,15 +442,15 @@ export const addTeamMember = async (
       });
     }
 
-    // Check if the user is already a member
-    const existingMembership = await prisma.teamMember.findUnique({
-      where: {
-        userId_teamId: {
-          userId: user.id,
-          teamId,
+    const existingMembership =
+      await prisma.teamMember.findUnique({
+        where: {
+          userId_teamId: {
+            userId: user.id,
+            teamId,
+          },
         },
-      },
-    });
+      });
 
     if (existingMembership) {
       return res.status(409).json({
@@ -425,12 +458,9 @@ export const addTeamMember = async (
       });
     }
 
-    // Validate requested role
     const memberRole =
       role === "ADMIN" ? "ADMIN" : "MEMBER";
 
-    // Prevent ADMIN from creating another OWNER
-    // OWNER is never accepted through this endpoint.
     const membership = await prisma.teamMember.create({
       data: {
         userId: user.id,
@@ -493,7 +523,6 @@ export const updateTeamMemberRole = async (
       });
     }
 
-    // Find requester membership
     const requesterMembership =
       await prisma.teamMember.findUnique({
         where: {
@@ -510,7 +539,6 @@ export const updateTeamMemberRole = async (
       });
     }
 
-    // Only OWNER and ADMIN can update member roles
     if (
       requesterMembership.role !== "OWNER" &&
       requesterMembership.role !== "ADMIN"
@@ -521,7 +549,6 @@ export const updateTeamMemberRole = async (
       });
     }
 
-    // Find the member being updated
     const member = await prisma.teamMember.findUnique({
       where: {
         id: memberId,
@@ -534,7 +561,6 @@ export const updateTeamMemberRole = async (
       });
     }
 
-    // OWNER role cannot be changed through this endpoint
     if (member.role === "OWNER") {
       return res.status(403).json({
         message:
@@ -542,7 +568,6 @@ export const updateTeamMemberRole = async (
       });
     }
 
-    // ADMIN cannot modify another ADMIN
     if (
       requesterMembership.role === "ADMIN" &&
       member.role === "ADMIN"
@@ -612,7 +637,6 @@ export const removeTeamMember = async (
       });
     }
 
-    // Find requester membership
     const requesterMembership =
       await prisma.teamMember.findUnique({
         where: {
@@ -629,7 +653,6 @@ export const removeTeamMember = async (
       });
     }
 
-    // Only OWNER and ADMIN can remove members
     if (
       requesterMembership.role !== "OWNER" &&
       requesterMembership.role !== "ADMIN"
@@ -640,7 +663,6 @@ export const removeTeamMember = async (
       });
     }
 
-    // Find the member
     const member = await prisma.teamMember.findUnique({
       where: {
         id: memberId,
@@ -653,7 +675,6 @@ export const removeTeamMember = async (
       });
     }
 
-    // OWNER cannot be removed
     if (member.role === "OWNER") {
       return res.status(403).json({
         message:
@@ -661,7 +682,6 @@ export const removeTeamMember = async (
       });
     }
 
-    // ADMIN cannot remove another ADMIN
     if (
       requesterMembership.role === "ADMIN" &&
       member.role === "ADMIN"
@@ -808,7 +828,6 @@ export const deleteTeam = async (
       });
     }
 
-    // Only the team OWNER can delete the entire team.
     if (membership.role !== "OWNER") {
       return res.status(403).json({
         message:
