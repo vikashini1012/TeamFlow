@@ -742,6 +742,29 @@ const ProjectDetails = () => {
               );
 
     // =========================================================
+    // TASK STATUS DISTRIBUTION
+    // =========================================================
+
+    const taskStatusDistribution = [
+        {
+            label: "TODO",
+            count: todoTasks,
+        },
+        {
+            label: "IN PROGRESS",
+            count: inProgressTasks,
+        },
+        {
+            label: "IN REVIEW",
+            count: inReviewTasks,
+        },
+        {
+            label: "DONE",
+            count: completedTasks,
+        },
+    ];
+
+    // =========================================================
     // LOADING
     // =========================================================
 
@@ -887,6 +910,54 @@ const ProjectDetails = () => {
                             {completionPercentage}%
                         </progress>
                     </div>
+                </section>
+
+                {/* =====================================================
+            TASK STATUS DISTRIBUTION
+        ====================================================== */}
+
+                <section>
+                    <h2>Task Status Distribution</h2>
+
+                    {totalTasks === 0 ? (
+                        <p>No tasks available for analytics.</p>
+                    ) : (
+                        <div>
+                            {taskStatusDistribution.map(
+                                (status) => {
+                                    const percentage = Math.round(
+                                        (status.count / totalTasks) * 100
+                                    );
+
+                                    return (
+                                        <div key={status.label}>
+                                            <div>
+                                                <strong>
+                                                    {status.label}
+                                                </strong>{" "}
+                                                <span>
+                                                    {status.count} task
+                                                    {status.count === 1
+                                                        ? ""
+                                                        : "s"}
+                                                    {" "}
+                                                    ({percentage}%)
+                                                </span>
+                                            </div>
+
+                                            <progress
+                                                value={status.count}
+                                                max={totalTasks}
+                                                aria-label={`${status.label} task distribution`}
+                                            >
+                                                {percentage}%
+                                            </progress>
+                                        </div>
+                                    );
+                                }
+                            )}
+                        </div>
+                    )}
                 </section>
 
                 {/* =====================================================
