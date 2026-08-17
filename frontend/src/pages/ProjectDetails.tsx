@@ -829,6 +829,46 @@ const ProjectDetails = () => {
     );
 
     // =========================================================
+    // OVERDUE TASKS
+    // =========================================================
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const overdueTasks = (project?.tasks || []).filter(
+        (task) => {
+            if (!task.dueDate) {
+                return false;
+            }
+
+            if (task.status === "DONE") {
+                return false;
+            }
+
+            const dueDate = new Date(task.dueDate);
+            dueDate.setHours(0, 0, 0, 0);
+
+            return dueDate.getTime() < today.getTime();
+        }
+    );
+
+    const getDaysOverdue = (dueDate: string) => {
+        const due = new Date(dueDate);
+        due.setHours(0, 0, 0, 0);
+
+        const difference =
+            today.getTime() - due.getTime();
+
+        return Math.max(
+            1,
+            Math.ceil(
+                difference /
+                    (1000 * 60 * 60 * 24)
+            )
+        );
+    };
+
+    // =========================================================
     // TASK STATUS DISTRIBUTION
     // =========================================================
 
@@ -1169,6 +1209,99 @@ const ProjectDetails = () => {
                                     %
                                 </progress>
                             </div>
+                        </div>
+                    )}
+                </section>
+
+                {/* =====================================================
+            OVERDUE TASKS
+        ====================================================== */}
+
+                <section>
+                    <h2>Overdue Tasks</h2>
+
+                    <p>
+                        <strong>
+                            {overdueTasks.length}
+                        </strong>{" "}
+                        {overdueTasks.length === 1
+                            ? "overdue task"
+                            : "overdue tasks"}
+                    </p>
+
+                    {overdueTasks.length === 0 ? (
+                        <p>
+                            No overdue tasks.
+                        </p>
+                    ) : (
+                        <div>
+                            {overdueTasks.map(
+                                (task) => (
+                                    <article
+                                        key={task.id}
+                                    >
+                                        <h3>
+                                            {task.title}
+                                        </h3>
+
+                                        {task.description && (
+                                            <p>
+                                                {
+                                                    task.description
+                                                }
+                                            </p>
+                                        )}
+
+                                        <p>
+                                            Priority:{" "}
+                                            <strong>
+                                                {
+                                                    task.priority
+                                                }
+                                            </strong>
+                                        </p>
+
+                                        <p>
+                                            Status:{" "}
+                                            <strong>
+                                                {
+                                                    task.status
+                                                }
+                                            </strong>
+                                        </p>
+
+                                        <p>
+                                            Assignee:{" "}
+                                            <strong>
+                                                {task.assignee
+                                                    ? task.assignee.name
+                                                    : "Unassigned"}
+                                            </strong>
+                                        </p>
+
+                                        <p>
+                                            Due:{" "}
+                                            {new Date(
+                                                task.dueDate!
+                                            ).toLocaleDateString()}
+                                        </p>
+
+                                        <p>
+                                            <strong>
+                                                {getDaysOverdue(
+                                                    task.dueDate!
+                                                )}{" "}
+                                                {getDaysOverdue(
+                                                    task.dueDate!
+                                                ) === 1
+                                                    ? "day"
+                                                    : "days"}{" "}
+                                                overdue
+                                            </strong>
+                                        </p>
+                                    </article>
+                                )
+                            )}
                         </div>
                     )}
                 </section>
