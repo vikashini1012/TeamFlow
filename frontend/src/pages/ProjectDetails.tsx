@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type { FormEvent } from "react";
+import type { DragEvent, FormEvent } from "react";
 import api from "../services/api";
 
 interface Task {
@@ -80,6 +80,41 @@ const ProjectDetails = () => {
     const [taskSort, setTaskSort] = useState<
         "NEWEST" | "OLDEST" | "DUE_DATE" | "PRIORITY"
     >("NEWEST");
+
+    // =========================================================
+    // TASK VIEW STATE
+    // =========================================================
+
+    const [taskView, setTaskView] = useState<"LIST" | "KANBAN">(() => {
+        if (!projectId) {
+            return "LIST";
+        }
+
+        const savedView = localStorage.getItem(
+            `teamflow_project_view_${projectId}`
+        );
+
+        return savedView === "KANBAN" ? "KANBAN" : "LIST";
+    });
+
+    const handleTaskViewChange = (
+        view: "LIST" | "KANBAN"
+    ) => {
+        setTaskView(view);
+
+        if (projectId) {
+            localStorage.setItem(
+                `teamflow_project_view_${projectId}`,
+                view
+            );
+        }
+    };
+
+    // =========================================================
+    // KANBAN DRAG & DROP STATE
+    // =========================================================
+
+    const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
     const [creatingTask, setCreatingTask] = useState(false);
     const [createTaskError, setCreateTaskError] = useState("");
@@ -199,6 +234,16 @@ const ProjectDetails = () => {
                     );
             }
         });
+    const kanbanColumns: {
+        status: Task["status"];
+        label: string;
+    }[] = [
+        { status: "TODO", label: "TODO" },
+        { status: "IN_PROGRESS", label: "IN PROGRESS" },
+        { status: "IN_REVIEW", label: "IN REVIEW" },
+        { status: "DONE", label: "DONE" },
+    ];
+
     // =========================================================
     // LOAD PROJECT
     // =========================================================
@@ -305,6 +350,22 @@ const ProjectDetails = () => {
 
         fetchProject();
     }, [projectId, navigate]);
+
+    // Restore the saved task view whenever the project changes.
+    useEffect(() => {
+        if (!projectId) {
+            setTaskView("LIST");
+            return;
+        }
+
+        const savedView = localStorage.getItem(
+            `teamflow_project_view_${projectId}`
+        );
+
+        setTaskView(
+            savedView === "KANBAN" ? "KANBAN" : "LIST"
+        );
+    }, [projectId]);
 
     // =========================================================
     // CREATE TASK
@@ -572,6 +633,45 @@ const ProjectDetails = () => {
                 "Failed to update task status."
             );
         }
+    };
+
+    const handleKanbanDragStart = (taskId: string) => {
+        setDraggedTaskId(taskId);
+    };
+
+    const handleKanbanDragEnd = () => {
+        setDraggedTaskId(null);
+    };
+
+    const handleKanbanDragOver = (
+        event: DragEvent<HTMLElement>
+    ) => {
+        event.preventDefault();
+    };
+
+    const handleKanbanDrop = async (
+        event: DragEvent<HTMLElement>,
+        targetStatus: Task["status"]
+    ) => {
+        event.preventDefault();
+
+        const taskId = draggedTaskId;
+
+        setDraggedTaskId(null);
+
+        if (!taskId) {
+            return;
+        }
+
+        const task = project?.tasks.find(
+            (item) => item.id === taskId
+        );
+
+        if (!task || task.status === targetStatus) {
+            return;
+        }
+
+        await handleStatusChange(taskId, targetStatus);
     };
 
     const handleDeleteTask = async (taskId: string) => {
@@ -1101,10 +1201,30 @@ const ProjectDetails = () => {
                         )}
 
                     {/* ===================================================
-              TASK LIST
+              TASK VIEW
           ==================================================== */}
 
-                    {project.tasks.length > 0 && displayedTasks.length > 0 && (
+                    <div>
+                        <button
+                            type="button"
+                            onClick={() => handleTaskViewChange("LIST")}
+                            disabled={taskView === "LIST"}
+                        >
+                            List View
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => handleTaskViewChange("KANBAN")}
+                            disabled={taskView === "KANBAN"}
+                        >
+                            Kanban View
+                        </button>
+                    </div>
+
+                    {taskView === "LIST" &&
+                        project.tasks.length > 0 &&
+                        displayedTasks.length > 0 && (
                         <div>
                             {displayedTasks.map((task) => (
                                 <article
@@ -1468,6 +1588,138 @@ const ProjectDetails = () => {
                             )}
                         </div>
                     )}
+
+                    {taskView === "KANBAN" && (
+                        <div>
+                            {kanbanColumns.map((column) => {
+                                const columnTasks = displayedTasks.filter(
+                                    (task) => task.status === column.status
+                                );
+
+                                return (
+                                    <section
+                                        key={column.status}
+                                        onDragOver={handleKanbanDragOver}
+                                        onDrop={(event) =>
+                                            handleKanbanDrop(
+                                                event,
+                                                column.status
+                                            )
+                                        }
+                                    >
+                                        <h3>
+                                            {column.label} ({columnTasks.length})
+                                        </h3>
+
+                                        {columnTasks.length === 0 ? (
+                                            <p>No tasks.</p>
+                                        ) : (
+                                            <div>
+                                                {columnTasks.map((task) => (
+                                                    <article
+                                                        key={task.id}
+                                                        draggable
+                                                        onDragStart={() =>
+                                                            handleKanbanDragStart(
+                                                                task.id
+                                                            )
+                                                        }
+                                                        onDragEnd={
+                                                            handleKanbanDragEnd
+                                                        }
+                                                    >
+                                                        <h4>{task.title}</h4>
+
+                                                        <p>
+                                                            {task.description ||
+                                                                "No description provided."}
+                                                        </p>
+
+                                                        <p>
+                                                            Priority:{" "}
+                                                            <strong>{task.priority}</strong>
+                                                        </p>
+
+                                                        <p>
+                                                            Assignee:{" "}
+                                                            <strong>
+                                                                {task.assignee?.name ||
+                                                                    "Unassigned"}
+                                                            </strong>
+                                                        </p>
+
+                                                        {task.dueDate && (
+                                                            <p>
+                                                                Due:{" "}
+                                                                {new Date(
+                                                                    task.dueDate
+                                                                ).toLocaleDateString()}
+                                                            </p>
+                                                        )}
+
+                                                        <div>
+                                                            <label
+                                                                htmlFor={`kanban-status-${task.id}`}
+                                                            >
+                                                                Status:
+                                                            </label>
+
+                                                            <select
+                                                                id={`kanban-status-${task.id}`}
+                                                                value={task.status}
+                                                                onChange={(event) =>
+                                                                    handleStatusChange(
+                                                                        task.id,
+                                                                        event.target.value as Task["status"]
+                                                                    )
+                                                                }
+                                                            >
+                                                                <option value="TODO">
+                                                                    TODO
+                                                                </option>
+
+                                                                <option value="IN_PROGRESS">
+                                                                    IN PROGRESS
+                                                                </option>
+
+                                                                <option value="IN_REVIEW">
+                                                                    IN REVIEW
+                                                                </option>
+
+                                                                <option value="DONE">
+                                                                    DONE
+                                                                </option>
+                                                            </select>
+                                                        </div>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                handleTaskViewChange("LIST");
+                                                                handleEditTask(task);
+                                                            }}
+                                                        >
+                                                            Edit Task
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleDeleteTask(task.id)
+                                                            }
+                                                        >
+                                                            Delete Task
+                                                        </button>
+                                                    </article>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </section>
+                                );
+                            })}
+                        </div>
+                    )}
+
                 </section>
             </main>
         </div>
