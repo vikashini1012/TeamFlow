@@ -58,6 +58,9 @@ const TeamDetails = () => {
     const [updatingMemberId, setUpdatingMemberId] = useState<string | null>(null);
     const [memberRoleError, setMemberRoleError] = useState("");
     const [memberRoleSuccess, setMemberRoleSuccess] = useState("");
+    const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+    const [memberRemoveError, setMemberRemoveError] = useState("");
+    const [memberRemoveSuccess, setMemberRemoveSuccess] = useState("");
 
     // =========================================================
     // CREATE PROJECT
@@ -294,6 +297,77 @@ const TeamDetails = () => {
             );
         } finally {
             setUpdatingMemberId(null);
+        }
+    };
+
+    const handleRemoveMember = async (
+        member: TeamMember
+    ) => {
+        if (!teamId) {
+            setMemberRemoveError(
+                "Invalid team ID."
+            );
+            return;
+        }
+
+        if (member.role === "OWNER") {
+            setMemberRemoveError(
+                "The team owner cannot be removed."
+            );
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Are you sure you want to remove "${member.user.name}" from this team?`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            setRemovingMemberId(member.id);
+            setMemberRemoveError("");
+            setMemberRemoveSuccess("");
+
+            await api.delete(
+                `/teams/${teamId}/members/${member.id}`
+            );
+
+            setTeam((currentTeam) => {
+                if (!currentTeam) {
+                    return currentTeam;
+                }
+
+                return {
+                    ...currentTeam,
+                    members:
+                        currentTeam.members.filter(
+                            (item) =>
+                                item.id !== member.id
+                        ),
+                };
+            });
+
+            setMemberRemoveSuccess(
+                "Member removed successfully!"
+            );
+
+            setTimeout(() => {
+                setMemberRemoveSuccess("");
+            }, 1000);
+        } catch (error: any) {
+            console.error(
+                "Failed to remove member:",
+                error
+            );
+
+            setMemberRemoveError(
+                error.response?.data?.message ||
+                "Failed to remove member. Please try again."
+            );
+        } finally {
+            setRemovingMemberId(null);
         }
     };
     // =========================================================
@@ -1030,6 +1104,18 @@ const TeamDetails = () => {
                         </p>
                     )}
 
+                    {memberRemoveError && (
+                        <p>
+                            {memberRemoveError}
+                        </p>
+                    )}
+
+                    {memberRemoveSuccess && (
+                        <p>
+                            {memberRemoveSuccess}
+                        </p>
+                    )}
+
                     {team.members.length === 0 ? (
                         <p>No members found.</p>
                     ) : (
@@ -1104,6 +1190,8 @@ const TeamDetails = () => {
                                                     }
                                                     disabled={
                                                         updatingMemberId ===
+                                                        member.id ||
+                                                        removingMemberId ===
                                                         member.id
                                                     }
                                                 >
@@ -1122,6 +1210,21 @@ const TeamDetails = () => {
                                                             Updating...
                                                         </p>
                                                     )}
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleRemoveMember(member)
+                                                    }
+                                                    disabled={
+                                                        removingMemberId === member.id ||
+                                                        updatingMemberId === member.id
+                                                    }
+                                                >
+                                                    {removingMemberId === member.id
+                                                        ? "Removing..."
+                                                        : "Remove Member"}
+                                                </button>
                                             </div>
                                         )}
                                     </article>

@@ -4,9 +4,10 @@ import {
   getMyTeams,
   getTeamById,
   addTeamMember,
+  updateTeamMemberRole,
+  removeTeamMember,
   updateTeam,
   deleteTeam,
-  updateTeamMemberRole
 } from "../controllers/team.controller";
 import { authenticate } from "../middleware/auth.middleware";
 
@@ -52,6 +53,12 @@ router.put(
   "/:id/members/:memberId",
   authenticate,
   updateTeamMemberRole
+);
+
+router.delete(
+  "/:id/members/:memberId",
+  authenticate,
+  removeTeamMember
 );
 
 export default router;

@@ -450,6 +450,110 @@ export const updateTeamMemberRole = async (
   }
 };
 
+export const removeTeamMember = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({
+        message: "Authentication required",
+      });
+    }
+
+    const teamId = req.params.id;
+    const memberId = req.params.memberId;
+
+    if (
+      typeof teamId !== "string" ||
+      typeof memberId !== "string"
+    ) {
+      return res.status(400).json({
+        message: "Invalid team or member ID",
+      });
+    }
+
+    // Find requester membership
+    const requesterMembership =
+      await prisma.teamMember.findUnique({
+        where: {
+          userId_teamId: {
+            userId: req.userId,
+            teamId,
+          },
+        },
+      });
+
+    if (!requesterMembership) {
+      return res.status(403).json({
+        message: "You are not a member of this team",
+      });
+    }
+
+    // Only OWNER and ADMIN can remove members
+    if (
+      requesterMembership.role !== "OWNER" &&
+      requesterMembership.role !== "ADMIN"
+    ) {
+      return res.status(403).json({
+        message:
+          "Only team owners and admins can remove members",
+      });
+    }
+
+    // Find the member
+    const member = await prisma.teamMember.findUnique({
+      where: {
+        id: memberId,
+      },
+    });
+
+    if (!member || member.teamId !== teamId) {
+      return res.status(404).json({
+        message: "Team member not found",
+      });
+    }
+
+    // OWNER cannot be removed
+    if (member.role === "OWNER") {
+      return res.status(403).json({
+        message:
+          "The team owner cannot be removed",
+      });
+    }
+
+    // ADMIN cannot remove another ADMIN
+    if (
+      requesterMembership.role === "ADMIN" &&
+      member.role === "ADMIN"
+    ) {
+      return res.status(403).json({
+        message:
+          "Admins cannot remove another admin",
+      });
+    }
+
+    await prisma.teamMember.delete({
+      where: {
+        id: memberId,
+      },
+    });
+
+    return res.status(200).json({
+      message: "Member removed successfully",
+    });
+  } catch (error) {
+    console.error(
+      "Remove team member error:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
 export const updateTeam = async (
   req: AuthRequest,
   res: Response
