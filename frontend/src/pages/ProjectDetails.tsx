@@ -742,6 +742,58 @@ const ProjectDetails = () => {
               );
 
     // =========================================================
+    // PRIORITY DISTRIBUTION
+    // =========================================================
+
+    const lowPriorityTasks =
+        project?.tasks.filter(
+            (task) => task.priority === "LOW"
+        ).length || 0;
+
+    const mediumPriorityTasks =
+        project?.tasks.filter(
+            (task) => task.priority === "MEDIUM"
+        ).length || 0;
+
+    const highPriorityTasks =
+        project?.tasks.filter(
+            (task) => task.priority === "HIGH"
+        ).length || 0;
+
+    const urgentPriorityTasks =
+        project?.tasks.filter(
+            (task) => task.priority === "URGENT"
+        ).length || 0;
+
+    const lowPriorityPercentage =
+        totalTasks === 0
+            ? 0
+            : Math.round(
+                  (lowPriorityTasks / totalTasks) * 100
+              );
+
+    const mediumPriorityPercentage =
+        totalTasks === 0
+            ? 0
+            : Math.round(
+                  (mediumPriorityTasks / totalTasks) * 100
+              );
+
+    const highPriorityPercentage =
+        totalTasks === 0
+            ? 0
+            : Math.round(
+                  (highPriorityTasks / totalTasks) * 100
+              );
+
+    const urgentPriorityPercentage =
+        totalTasks === 0
+            ? 0
+            : Math.round(
+                  (urgentPriorityTasks / totalTasks) * 100
+              );
+
+    // =========================================================
     // TASK STATUS DISTRIBUTION
     // =========================================================
 
@@ -908,6 +960,92 @@ const ProjectDetails = () => {
                             aria-label="Project completion progress"
                         >
                             {completionPercentage}%
+                        </progress>
+                    </div>
+                </section>
+
+                {/* =====================================================
+            PRIORITY DISTRIBUTION
+        ====================================================== */}
+
+                <section>
+                    <h2>Priority Distribution</h2>
+
+                    <div>
+                        <p>
+                            LOW{" "}
+                            <strong>
+                                {lowPriorityTasks}{" "}
+                                {lowPriorityTasks === 1
+                                    ? "task"
+                                    : "tasks"}{" "}
+                                ({lowPriorityPercentage}%)
+                            </strong>
+                        </p>
+
+                        <progress
+                            value={lowPriorityPercentage}
+                            max={100}
+                            aria-label="Low priority task distribution"
+                        >
+                            {lowPriorityPercentage}%
+                        </progress>
+
+                        <p>
+                            MEDIUM{" "}
+                            <strong>
+                                {mediumPriorityTasks}{" "}
+                                {mediumPriorityTasks === 1
+                                    ? "task"
+                                    : "tasks"}{" "}
+                                ({mediumPriorityPercentage}%)
+                            </strong>
+                        </p>
+
+                        <progress
+                            value={mediumPriorityPercentage}
+                            max={100}
+                            aria-label="Medium priority task distribution"
+                        >
+                            {mediumPriorityPercentage}%
+                        </progress>
+
+                        <p>
+                            HIGH{" "}
+                            <strong>
+                                {highPriorityTasks}{" "}
+                                {highPriorityTasks === 1
+                                    ? "task"
+                                    : "tasks"}{" "}
+                                ({highPriorityPercentage}%)
+                            </strong>
+                        </p>
+
+                        <progress
+                            value={highPriorityPercentage}
+                            max={100}
+                            aria-label="High priority task distribution"
+                        >
+                            {highPriorityPercentage}%
+                        </progress>
+
+                        <p>
+                            URGENT{" "}
+                            <strong>
+                                {urgentPriorityTasks}{" "}
+                                {urgentPriorityTasks === 1
+                                    ? "task"
+                                    : "tasks"}{" "}
+                                ({urgentPriorityPercentage}%)
+                            </strong>
+                        </p>
+
+                        <progress
+                            value={urgentPriorityPercentage}
+                            max={100}
+                            aria-label="Urgent priority task distribution"
+                        >
+                            {urgentPriorityPercentage}%
                         </progress>
                     </div>
                 </section>
