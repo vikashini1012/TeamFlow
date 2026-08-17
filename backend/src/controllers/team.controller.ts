@@ -323,6 +323,133 @@ export const addTeamMember = async (
   }
 };
 
+export const updateTeamMemberRole = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({
+        message: "Authentication required",
+      });
+    }
+
+    const teamId = req.params.id;
+    const memberId = req.params.memberId;
+
+    if (
+      typeof teamId !== "string" ||
+      typeof memberId !== "string"
+    ) {
+      return res.status(400).json({
+        message: "Invalid team or member ID",
+      });
+    }
+
+    const { role } = req.body;
+
+    if (role !== "ADMIN" && role !== "MEMBER") {
+      return res.status(400).json({
+        message: "Invalid member role",
+      });
+    }
+
+    // Find requester membership
+    const requesterMembership =
+      await prisma.teamMember.findUnique({
+        where: {
+          userId_teamId: {
+            userId: req.userId,
+            teamId,
+          },
+        },
+      });
+
+    if (!requesterMembership) {
+      return res.status(403).json({
+        message: "You are not a member of this team",
+      });
+    }
+
+    // Only OWNER and ADMIN can update member roles
+    if (
+      requesterMembership.role !== "OWNER" &&
+      requesterMembership.role !== "ADMIN"
+    ) {
+      return res.status(403).json({
+        message:
+          "Only team owners and admins can update member roles",
+      });
+    }
+
+    // Find the member being updated
+    const member = await prisma.teamMember.findUnique({
+      where: {
+        id: memberId,
+      },
+    });
+
+    if (!member || member.teamId !== teamId) {
+      return res.status(404).json({
+        message: "Team member not found",
+      });
+    }
+
+    // OWNER role cannot be changed through this endpoint
+    if (member.role === "OWNER") {
+      return res.status(403).json({
+        message:
+          "The team owner's role cannot be changed",
+      });
+    }
+
+    // ADMIN cannot modify another ADMIN
+    if (
+      requesterMembership.role === "ADMIN" &&
+      member.role === "ADMIN"
+    ) {
+      return res.status(403).json({
+        message:
+          "Admins cannot change another admin's role",
+      });
+    }
+
+    const updatedMember =
+      await prisma.teamMember.update({
+        where: {
+          id: memberId,
+        },
+        data: {
+          role,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      });
+
+    return res.status(200).json({
+      message: "Member role updated successfully",
+      member: updatedMember,
+    });
+  } catch (error) {
+    console.error(
+      "Update team member role error:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
 export const updateTeam = async (
   req: AuthRequest,
   res: Response

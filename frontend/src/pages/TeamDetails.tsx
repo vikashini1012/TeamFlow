@@ -55,6 +55,9 @@ const TeamDetails = () => {
     const [addingMember, setAddingMember] = useState(false);
     const [memberError, setMemberError] = useState("");
     const [memberSuccess, setMemberSuccess] = useState("");
+    const [updatingMemberId, setUpdatingMemberId] = useState<string | null>(null);
+    const [memberRoleError, setMemberRoleError] = useState("");
+    const [memberRoleSuccess, setMemberRoleSuccess] = useState("");
 
     // =========================================================
     // CREATE PROJECT
@@ -165,7 +168,7 @@ const TeamDetails = () => {
 
                 setError(
                     error.response?.data?.message ||
-                        "Failed to load team details."
+                    "Failed to load team details."
                 );
             } finally {
                 setLoading(false);
@@ -234,13 +237,65 @@ const TeamDetails = () => {
 
             setMemberError(
                 error.response?.data?.message ||
-                    "Failed to add member. Please try again."
+                "Failed to add member. Please try again."
             );
         } finally {
             setAddingMember(false);
         }
     };
 
+    const handleUpdateMemberRole = async (
+        member: TeamMember,
+        role: "ADMIN" | "MEMBER"
+    ) => {
+        if (!teamId) {
+            setMemberRoleError("Invalid team ID.");
+            return;
+        }
+
+        if (member.role === role) {
+            return;
+        }
+
+        try {
+            setUpdatingMemberId(member.id);
+            setMemberRoleError("");
+            setMemberRoleSuccess("");
+
+            await api.put(
+                `/teams/${teamId}/members/${member.id}`,
+                {
+                    role,
+                }
+            );
+
+            const response = await api.get(
+                `/teams/${teamId}`
+            );
+
+            setTeam(response.data.team);
+
+            setMemberRoleSuccess(
+                "Member role updated successfully!"
+            );
+
+            setTimeout(() => {
+                setMemberRoleSuccess("");
+            }, 1000);
+        } catch (error: any) {
+            console.error(
+                "Failed to update member role:",
+                error
+            );
+
+            setMemberRoleError(
+                error.response?.data?.message ||
+                "Failed to update member role. Please try again."
+            );
+        } finally {
+            setUpdatingMemberId(null);
+        }
+    };
     // =========================================================
     // CREATE PROJECT
     // =========================================================
@@ -301,7 +356,7 @@ const TeamDetails = () => {
 
             setProjectError(
                 error.response?.data?.message ||
-                    "Failed to create project. Please try again."
+                "Failed to create project. Please try again."
             );
         } finally {
             setCreatingProject(false);
@@ -385,7 +440,7 @@ const TeamDetails = () => {
 
             setUpdateProjectError(
                 error.response?.data?.message ||
-                    "Failed to update project. Please try again."
+                "Failed to update project. Please try again."
             );
         } finally {
             setUpdatingProject(false);
@@ -443,7 +498,7 @@ const TeamDetails = () => {
 
             setDeleteProjectError(
                 error.response?.data?.message ||
-                    "Failed to delete project. Please try again."
+                "Failed to delete project. Please try again."
             );
         } finally {
             setDeletingProjectId(null);
@@ -533,7 +588,7 @@ const TeamDetails = () => {
 
             setTeamUpdateError(
                 error.response?.data?.message ||
-                    "Failed to update team. Please try again."
+                "Failed to update team. Please try again."
             );
         } finally {
             setUpdatingTeam(false);
@@ -574,7 +629,7 @@ const TeamDetails = () => {
 
             setTeamDeleteError(
                 error.response?.data?.message ||
-                    "Failed to delete team. Please try again."
+                "Failed to delete team. Please try again."
             );
         } finally {
             setDeletingTeam(false);
@@ -901,8 +956,8 @@ const TeamDetails = () => {
                                                 event
                                                     .target
                                                     .value as
-                                                    | "ADMIN"
-                                                    | "MEMBER"
+                                                | "ADMIN"
+                                                | "MEMBER"
                                             )
                                         }
                                         disabled={
@@ -963,6 +1018,18 @@ const TeamDetails = () => {
                         </div>
                     )}
 
+                    {memberRoleError && (
+                        <p>
+                            {memberRoleError}
+                        </p>
+                    )}
+
+                    {memberRoleSuccess && (
+                        <p>
+                            {memberRoleSuccess}
+                        </p>
+                    )}
+
                     {team.members.length === 0 ? (
                         <p>No members found.</p>
                     ) : (
@@ -970,9 +1037,7 @@ const TeamDetails = () => {
                             {team.members.map(
                                 (member) => (
                                     <article
-                                        key={
-                                            member.id
-                                        }
+                                        key={member.id}
                                     >
                                         <h3>
                                             {
@@ -991,7 +1056,7 @@ const TeamDetails = () => {
                                         </p>
 
                                         <p>
-                                            Role:{" "}
+                                            Current Role:{" "}
                                             <strong>
                                                 {
                                                     member.role
@@ -1005,6 +1070,60 @@ const TeamDetails = () => {
                                                 member.joinedAt
                                             ).toLocaleDateString()}
                                         </p>
+
+                                        {/* OWNER cannot be changed */}
+                                        {member.role ===
+                                            "OWNER" ? (
+                                            <p>
+                                                Team Owner
+                                            </p>
+                                        ) : (
+                                            <div>
+                                                <label
+                                                    htmlFor={`member-role-${member.id}`}
+                                                >
+                                                    Change Role
+                                                </label>
+
+                                                <select
+                                                    id={`member-role-${member.id}`}
+                                                    value={
+                                                        member.role
+                                                    }
+                                                    onChange={(
+                                                        event
+                                                    ) =>
+                                                        handleUpdateMemberRole(
+                                                            member,
+                                                            event
+                                                                .target
+                                                                .value as
+                                                            | "ADMIN"
+                                                            | "MEMBER"
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        updatingMemberId ===
+                                                        member.id
+                                                    }
+                                                >
+                                                    <option value="MEMBER">
+                                                        Member
+                                                    </option>
+
+                                                    <option value="ADMIN">
+                                                        Admin
+                                                    </option>
+                                                </select>
+
+                                                {updatingMemberId ===
+                                                    member.id && (
+                                                        <p>
+                                                            Updating...
+                                                        </p>
+                                                    )}
+                                            </div>
+                                        )}
                                     </article>
                                 )
                             )}
@@ -1174,7 +1293,7 @@ const TeamDetails = () => {
                                         }
                                     >
                                         {editingProjectId ===
-                                        project.id ? (
+                                            project.id ? (
                                             <div>
                                                 <h3>
                                                     Edit
@@ -1345,7 +1464,7 @@ const TeamDetails = () => {
                                                     }
                                                 >
                                                     {deletingProjectId ===
-                                                    project.id
+                                                        project.id
                                                         ? "Deleting..."
                                                         : "Delete Project"}
                                                 </button>
