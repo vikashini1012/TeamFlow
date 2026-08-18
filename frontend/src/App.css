@@ -44,30 +44,69 @@
 /* Authentication pages */
 .auth-page{min-height:100vh;display:grid;grid-template-columns:1.1fr .9fr;background:#090c0d}.auth-visual{position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:clamp(35px,6vw,90px);background:radial-gradient(circle at 65% 25%,rgba(168,239,39,.1),transparent 30%),linear-gradient(145deg,#101516,#090c0d)}.auth-visual:before{content:"";position:absolute;width:430px;height:430px;right:-150px;top:-150px;border:1px solid rgba(168,239,39,.12);border-radius:45%;transform:rotate(18deg)}.auth-visual:after{content:"";position:absolute;width:300px;height:300px;right:80px;top:90px;border:1px solid rgba(168,239,39,.07);border-radius:35%;transform:rotate(18deg)}.auth-visual-content{position:relative;z-index:1;max-width:580px}.auth-visual h1{margin:20px 0 15px;color:#f5f8f5;font-family:"Plus Jakarta Sans",sans-serif;font-size:clamp(38px,5vw,72px);line-height:.98;letter-spacing:-3px}.auth-visual h1 span{color:var(--tf-lime)}.auth-visual p{max-width:450px;color:#7f8985;font-size:13px;line-height:1.7}.auth-visual-badge{display:inline-flex;align-items:center;gap:9px;color:#a8ef27;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase}.auth-visual-badge .brand-mark{width:34px;height:34px}.auth-panel{display:flex;align-items:center;justify-content:center;padding:40px;background:#0e1213;border-left:1px solid var(--tf-border)}.auth-card{width:min(410px,100%)}.auth-brand{display:flex;align-items:center;gap:9px;margin-bottom:35px;color:#eef3ef;font-family:"Plus Jakarta Sans",sans-serif;font-size:19px;font-weight:800}.auth-card h2{color:#f2f6f3;font-family:"Plus Jakarta Sans",sans-serif;font-size:29px;letter-spacing:-.8px}.auth-subtitle{margin-top:7px;margin-bottom:25px;color:#707a76;font-size:12px}.auth-field{margin-bottom:15px}.auth-field label{display:block;margin-bottom:7px;color:#aab3af;font-size:11px;font-weight:700}.auth-field input{width:100%;height:43px;padding:0 12px;border:1px solid #303839;border-radius:8px;outline:0;background:#0a0e0f;color:#edf2ef;font-size:12px}.auth-field input:focus{border-color:var(--tf-lime);box-shadow:0 0 0 3px rgba(168,239,39,.08)}.auth-submit{width:100%;height:44px;margin-top:5px;border:1px solid var(--tf-lime);border-radius:8px;background:var(--tf-lime);color:#0a0d0e;font-size:12px;font-weight:900}.auth-submit:hover{background:#b8f748}.auth-error,.auth-success{margin:13px 0;padding:10px;border-radius:7px;font-size:11px}.auth-error{color:#ff9b9f;background:rgba(239,107,112,.07);border:1px solid rgba(239,107,112,.18)}.auth-success{color:#8ee6a7;background:rgba(99,212,137,.07);border:1px solid rgba(99,212,137,.18)}.auth-switch{margin-top:20px;color:#69736f;font-size:11px;text-align:center}.auth-switch a{color:var(--tf-lime);font-weight:800;text-decoration:none}.auth-switch a:hover{text-decoration:underline}
 
-/* Existing classless TeamDetails / ProjectDetails: dark SaaS treatment without changing business logic */
-body:has(> #root) main{color:#e8eeea}
-body:has(> #root) main > section{max-width:1200px;margin:0 auto 14px;padding:22px;border:1px solid var(--tf-border);border-radius:12px;background:#111617;box-shadow:var(--tf-shadow)}
-body:has(> #root) main > section:first-child{margin-top:30px}
-body:has(> #root) main h1,body:has(> #root) main h2,body:has(> #root) main h3{color:#eef3ef;font-family:"Plus Jakarta Sans",sans-serif}
-body:has(> #root) main h1{font-size:30px;letter-spacing:-1px}body:has(> #root) main h2{font-size:20px;margin-bottom:10px}body:has(> #root) main h3{font-size:14px}
-body:has(> #root) main p{color:#7e8985;font-size:12px;line-height:1.65}
-body:has(> #root) main button{min-height:36px;margin:6px 5px 0 0;padding:0 12px;border:1px solid #303839;border-radius:8px;background:#171c1d;color:#dbe2de;font-size:11px;font-weight:700}
-body:has(> #root) main button:hover{border-color:#4a5552;background:#1c2223}
-body:has(> #root) main button[type="submit"]{border-color:var(--tf-lime);background:var(--tf-lime);color:#0a0d0e}
-body:has(> #root) main input,body:has(> #root) main textarea,body:has(> #root) main select{min-height:38px;padding:8px 10px;border:1px solid #303839;border-radius:8px;background:#0c1011;color:#e9efeb;outline:0;font-size:11px}
-body:has(> #root) main input:focus,body:has(> #root) main textarea:focus,body:has(> #root) main select:focus{border-color:var(--tf-lime);box-shadow:0 0 0 3px rgba(168,239,39,.08)}
-body:has(> #root) main label{display:block;margin:8px 0 6px;color:#aab3af;font-size:11px;font-weight:700}
-body:has(> #root) main form{max-width:720px}
-body:has(> #root) header:not(.topbar){max-width:1200px;margin:0 auto;padding:26px 22px 0;display:flex;align-items:center;justify-content:space-between;gap:15px}
-body:has(> #root) header:not(.topbar) h1{font-size:20px;color:var(--tf-lime)}
-body:has(> #root) progress{width:100%;height:7px;accent-color:var(--tf-lime)}
-body:has(> #root) main article{border:1px solid #252d2e;border-radius:10px;background:#0f1415;padding:16px;margin:10px 0}
-body:has(> #root) main article:hover{border-color:#374141}
-body:has(> #root) main > section > div{gap:10px}
-body:has(> #root) main > section > div > div{border-color:#252d2e!important;background:#0f1415!important;color:#e9efeb}
 
 /* Responsive */
 @media(max-width:1050px){.sidebar{width:225px;flex-basis:225px}.analytics-grid{grid-template-columns:1fr 1fr}.completion-panel{grid-column:1/-1}.auth-page{grid-template-columns:1fr}.auth-visual{min-height:310px;padding:45px}.auth-panel{border-left:0;border-top:1px solid var(--tf-border)}}
 @media(max-width:820px){.sidebar{position:fixed;inset:0 auto 0 0;width:260px;transform:translateX(-105%);transition:transform .22s;box-shadow:15px 0 50px rgba(0,0,0,.5)}.sidebar.sidebar-open{transform:translateX(0)}.sidebar-close{display:block}.mobile-overlay{display:block;position:fixed;inset:0;z-index:25;border:0;background:rgba(0,0,0,.58)}.mobile-menu-button{display:grid;place-items:center;width:37px;height:37px;border:1px solid #2c3435;border-radius:8px;background:#121718;color:#dce3df}.topbar{height:62px;padding:0 16px;gap:10px}.topbar-search{width:auto;flex:1}.topbar-search kbd,.user-menu-info,.user-chevron{display:none}.user-menu{margin-left:0;padding-left:5px;border-left:0}.topbar-icon-button{display:none}.dashboard-content{padding:28px 17px 45px}}
 @media(max-width:650px){.dashboard-heading{align-items:stretch;flex-direction:column;gap:15px}.dashboard-heading .primary-button{align-self:flex-start}.stats-grid{grid-template-columns:1fr 1fr}.analytics-grid{grid-template-columns:1fr}.completion-panel{grid-column:auto}.completion-content{justify-content:center}.teams-grid{grid-template-columns:1fr}.section-heading{align-items:stretch;flex-direction:column}.section-heading .secondary-button{align-self:flex-start}.auth-visual{min-height:260px;padding:35px 25px}.auth-visual h1{font-size:42px}.auth-panel{padding:30px 20px}}
 @media(max-width:450px){.topbar-search{display:none}.dashboard-content{padding-inline:13px}.dashboard-heading h1{font-size:26px}.stats-grid{gap:8px}.stat-card{padding:13px}.stat-card>strong{font-size:22px}.completion-content{flex-direction:column}.completion-details{width:100%}.modal-card{padding:18px}.auth-visual{min-height:220px}.auth-visual h1{font-size:34px;letter-spacing:-2px}}
+
+/* ============================================================
+   TEAMFLOW ACCOUNT / AUTH EXTENSIONS
+   ============================================================ */
+
+.auth-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.auth-forgot-link {
+  color: var(--accent, #a8ef27);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.auth-forgot-link:hover {
+  text-decoration: underline;
+}
+
+.auth-success {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(105, 214, 149, 0.3);
+  border-radius: 9px;
+  background: rgba(105, 214, 149, 0.08);
+  color: #8de5aa;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.auth-dev-reset {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px dashed rgba(168, 239, 39, 0.35);
+  border-radius: 10px;
+  background: rgba(168, 239, 39, 0.06);
+}
+
+.auth-dev-reset strong {
+  color: #dce9d5;
+  font-size: 13px;
+}
+
+.auth-dev-reset code {
+  display: block;
+  padding: 10px;
+  overflow-wrap: anywhere;
+  border-radius: 7px;
+  background: #0a0e0f;
+  color: #a8ef27;
+  font-size: 11px;
+}
+

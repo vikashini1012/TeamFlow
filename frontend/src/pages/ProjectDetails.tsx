@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { DragEvent, FormEvent } from "react";
 import api from "../services/api";
+import "../ProjectDetails_UI_Refined.css";
 
 interface Task {
     id: string;
@@ -924,7 +925,7 @@ const ProjectDetails = () => {
                 <h1>TeamFlow</h1>
             </header>
 
-            <main>
+            <main className="details-page">
                 {/* =====================================================
             PROJECT INFORMATION
         ====================================================== */}

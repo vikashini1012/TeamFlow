@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
+import "../ProjectDetails_UI_Refined.css";
 import type { FormEvent } from "react";
 
 interface TeamMember {
@@ -373,7 +374,7 @@ const [deleteProjectError, setDeleteProjectError] =
                 <h1>TeamFlow</h1>
             </header>
 
-            <main>
+            <main className="details-page">
                 {/* Team information */}
                 <section>
                     <h2>{team.name}</h2>
