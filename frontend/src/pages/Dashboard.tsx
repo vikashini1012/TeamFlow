@@ -1,15 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { FormEvent } from "react";
+import type { CSSProperties, FormEvent } from "react";
 import api from "../services/api";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatarUrl?: string | null;
-  createdAt?: string;
-}
+import AppLayout from "../components/AppLayout";
+import { getPercentage, useLayoutData } from "../hooks/useLayoutData";
 
 interface Team {
   id: string;
@@ -25,24 +19,19 @@ interface Team {
 interface DashboardAnalytics {
   teamCount: number;
   projectCount: number;
-
   totalTasks: number;
   todoTasks: number;
   inProgressTasks: number;
   inReviewTasks: number;
   completedTasks: number;
-
   overdueTasks: number;
-
   completionPercentage: number;
-
   statusDistribution: {
     TODO: number;
     IN_PROGRESS: number;
     IN_REVIEW: number;
     DONE: number;
   };
-
   priorityDistribution: {
     LOW: number;
     MEDIUM: number;
@@ -51,251 +40,106 @@ interface DashboardAnalytics {
   };
 }
 
-const getPercentage = (
-  count: number,
-  total: number
-) => {
-  if (total === 0) {
-    return 0;
-  }
-
-  return Math.round((count / total) * 100);
-};
-
 const Dashboard = () => {
   const navigate = useNavigate();
+  const {
+    user,
+    teams: layoutTeams,
+    layoutLoading,
+    mobileMenuOpen,
+    setMobileMenuOpen,
+    handleLogout,
+  } = useLayoutData();
 
-  // =========================================================
-  // USER AND TEAM DATA
-  // =========================================================
-
-  const [user, setUser] = useState<User | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
-
-  // =========================================================
-  // LOADING AND ERROR STATES
-  // =========================================================
-
   const [loading, setLoading] = useState(true);
   const [teamsLoading, setTeamsLoading] = useState(true);
-
-  const [error, setError] = useState("");
   const [teamsError, setTeamsError] = useState("");
 
-  // =========================================================
-  // CREATE TEAM STATE
-  // =========================================================
-
-  const [showCreateTeam, setShowCreateTeam] =
-    useState(false);
-
+  const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [teamName, setTeamName] = useState("");
-  const [teamDescription, setTeamDescription] =
-    useState("");
+  const [teamDescription, setTeamDescription] = useState("");
+  const [creatingTeam, setCreatingTeam] = useState(false);
+  const [createTeamError, setCreateTeamError] = useState("");
+  const [createTeamSuccess, setCreateTeamSuccess] = useState("");
 
-  const [creatingTeam, setCreatingTeam] =
-    useState(false);
-
-  const [createTeamError, setCreateTeamError] =
-    useState("");
-
-  const [createTeamSuccess, setCreateTeamSuccess] =
-    useState("");
-
-  // =========================================================
-  // ANALYTICS STATE
-  // =========================================================
-
-  const [analytics, setAnalytics] =
-    useState<DashboardAnalytics | null>(null);
-
-  const [analyticsLoading, setAnalyticsLoading] =
-    useState(true);
-
-  const [analyticsError, setAnalyticsError] =
-    useState("");
-
-  // =========================================================
-  // LOAD DASHBOARD DATA
-  // =========================================================
+  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [analyticsError, setAnalyticsError] = useState("");
 
   useEffect(() => {
+    if (layoutLoading) return;
+
     const fetchDashboardData = async () => {
-      const token =
-        localStorage.getItem("teamflow_token");
-
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
-      // -------------------------------------------------------
-      // FETCH CURRENT USER
-      // -------------------------------------------------------
-
       try {
-        const userResponse =
-          await api.get("/auth/me");
-
-        setUser(userResponse.data.user);
+        const response = await api.get("/teams");
+        setTeams(response.data.teams);
       } catch (error) {
-        console.error(
-          "Authentication failed:",
-          error
-        );
-
-        localStorage.removeItem(
-          "teamflow_token"
-        );
-
-        setError(
-          "Your session has expired. Please login again."
-        );
-
-        setTimeout(() => {
-          navigate("/login");
-        }, 1500);
-
-        setLoading(false);
-        return;
-      }
-
-      setLoading(false);
-
-      // -------------------------------------------------------
-      // FETCH USER'S TEAMS
-      // -------------------------------------------------------
-
-      try {
-        const teamsResponse =
-          await api.get("/teams");
-
-        setTeams(
-          teamsResponse.data.teams
-        );
-      } catch (error) {
-        console.error(
-          "Failed to load teams:",
-          error
-        );
-
-        setTeamsError(
-          "Failed to load your teams."
-        );
+        console.error("Failed to load teams:", error);
+        setTeamsError("Failed to load your teams.");
       } finally {
         setTeamsLoading(false);
       }
 
-      // -------------------------------------------------------
-      // FETCH DASHBOARD ANALYTICS
-      // -------------------------------------------------------
-
       try {
-        const analyticsResponse =
-          await api.get("/teams/analytics");
-
-        setAnalytics(
-          analyticsResponse.data.analytics
-        );
+        const response = await api.get("/teams/analytics");
+        setAnalytics(response.data.analytics);
       } catch (error) {
-        console.error(
-          "Failed to load dashboard analytics:",
-          error
-        );
-
-        setAnalyticsError(
-          "Failed to load productivity analytics."
-        );
+        console.error("Failed to load dashboard analytics:", error);
+        setAnalyticsError("Failed to load productivity analytics.");
       } finally {
         setAnalyticsLoading(false);
       }
+
+      setLoading(false);
     };
 
     fetchDashboardData();
-  }, [navigate]);
-
-  // =========================================================
-  // LOGOUT
-  // =========================================================
-
-  const handleLogout = () => {
-    localStorage.removeItem(
-      "teamflow_token"
-    );
-
-    navigate("/login");
-  };
-
-  // =========================================================
-  // OPEN CREATE TEAM FORM
-  // =========================================================
+  }, [layoutLoading]);
 
   const handleCreateTeam = () => {
     setTeamName("");
     setTeamDescription("");
-
     setCreateTeamError("");
     setCreateTeamSuccess("");
-
     setShowCreateTeam(true);
   };
 
-  // =========================================================
-  // CREATE TEAM
-  // =========================================================
-
-  const handleCreateTeamSubmit = async (
-    event: FormEvent<HTMLFormElement>
-  ) => {
+  const handleCreateTeamSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!teamName.trim()) {
-      setCreateTeamError(
-        "Team name is required."
-      );
-
+      setCreateTeamError("Team name is required.");
       return;
     }
 
     try {
       setCreatingTeam(true);
-
       setCreateTeamError("");
       setCreateTeamSuccess("");
 
-      const response = await api.post(
-        "/teams",
-        {
-          name: teamName.trim(),
-          description:
-            teamDescription.trim(),
-        }
-      );
+      const response = await api.post("/teams", {
+        name: teamName.trim(),
+        description: teamDescription.trim(),
+      });
 
-      const createdTeam =
-        response.data.team;
+      const createdTeam = response.data.team;
 
       setTeams((currentTeams) => [
         {
           id: createdTeam.id,
           name: createdTeam.name,
-          description:
-            createdTeam.description,
+          description: createdTeam.description,
           role: "OWNER",
-          joinedAt:
-            createdTeam.createdAt,
+          joinedAt: createdTeam.createdAt,
           memberCount: 1,
           projectCount: 0,
-          createdAt:
-            createdTeam.createdAt,
+          createdAt: createdTeam.createdAt,
         },
         ...currentTeams,
       ]);
 
-      setCreateTeamSuccess(
-        "Team created successfully!"
-      );
-
+      setCreateTeamSuccess("Team created successfully!");
       setTeamName("");
       setTeamDescription("");
 
@@ -304,780 +148,369 @@ const Dashboard = () => {
         setCreateTeamSuccess("");
       }, 1000);
     } catch (error: any) {
-      console.error(
-        "Create team failed:",
-        error
-      );
-
+      console.error("Create team failed:", error);
       setCreateTeamError(
         error.response?.data?.message ||
-          "Failed to create team. Please try again."
+        "Failed to create team. Please try again."
       );
     } finally {
       setCreatingTeam(false);
     }
   };
 
-  // =========================================================
-  // LOADING SCREEN
-  // =========================================================
-
-  if (loading) {
+  if (layoutLoading || loading) {
     return (
-      <div>
-        <h1>TeamFlow</h1>
-
-        <p>
-          Loading your dashboard...
-        </p>
+      <div className="app-loading">
+        <div className="loading-logo">TF</div>
+        <div className="loading-spinner" />
+        <h2>Loading TeamFlow</h2>
+        <p>Preparing your workspace...</p>
       </div>
     );
   }
 
-  // =========================================================
-  // AUTHENTICATION ERROR
-  // =========================================================
+  const statusItems = [
+    ["To Do", analytics?.statusDistribution.TODO ?? 0, "status-todo"],
+    ["In Progress", analytics?.statusDistribution.IN_PROGRESS ?? 0, "status-progress"],
+    ["In Review", analytics?.statusDistribution.IN_REVIEW ?? 0, "status-review"],
+    ["Done", analytics?.statusDistribution.DONE ?? 0, "status-done"],
+  ] as const;
 
-  if (error) {
-    return (
-      <div>
-        <h1>TeamFlow</h1>
-
-        <p>{error}</p>
-      </div>
-    );
-  }
-
-  // =========================================================
-  // DASHBOARD
-  // =========================================================
+  const priorityItems = [
+    ["Low", analytics?.priorityDistribution.LOW ?? 0, "priority-low"],
+    ["Medium", analytics?.priorityDistribution.MEDIUM ?? 0, "priority-medium"],
+    ["High", analytics?.priorityDistribution.HIGH ?? 0, "priority-high"],
+    ["Urgent", analytics?.priorityDistribution.URGENT ?? 0, "priority-urgent"],
+  ] as const;
 
   return (
-    <div>
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
+    <AppLayout
+      user={user}
+      teams={layoutTeams}
+      activeNav="dashboard"
+      mobileMenuOpen={mobileMenuOpen}
+      onMobileMenuOpen={() => setMobileMenuOpen(true)}
+      onMobileMenuClose={() => setMobileMenuOpen(false)}
+      onLogout={handleLogout}
+    >
+      <div className="dashboard-content">
+          <section className="dashboard-heading">
+            <div>
+              <span className="eyebrow">WORKSPACE OVERVIEW</span>
+              <h1>Good morning, {user?.name?.split(" ")[0]}! 👋</h1>
+              <p>Here's what's happening across your teams today.</p>
+            </div>
 
-      <header>
-        <h1>TeamFlow</h1>
-
-        <button onClick={handleLogout}>
-          Logout
-        </button>
-      </header>
-
-      <main>
-        {/* ===================================================
-            WELCOME
-        ==================================================== */}
-
-        {user && (
-          <section>
-            <h2>
-              Welcome back, {user.name}! 👋
-            </h2>
-
-            <p>{user.email}</p>
+            <button className="primary-button" onClick={handleCreateTeam}>
+              ＋ Create Team
+            </button>
           </section>
-        )}
 
-        {/* ===================================================
-            PRODUCTIVITY SUMMARY
-        ==================================================== */}
-
-        <section>
-          <h2>
-            Productivity Summary
-          </h2>
-
-          {analyticsLoading && (
-            <p>
-              Loading productivity analytics...
-            </p>
-          )}
+          <section className="stats-grid" aria-label="Productivity summary">
+            {[
+              ["♙", "Workspace", analytics?.teamCount ?? 0, "Teams", "stat-purple"],
+              ["▦", "Active", analytics?.projectCount ?? 0, "Projects", "stat-blue"],
+              ["✓", "Tracked", analytics?.totalTasks ?? 0, "Total tasks", "stat-orange"],
+              ["↗", "Performance", `${analytics?.completionPercentage ?? 0}%`, "Completion rate", "stat-green"],
+            ].map(([icon, caption, value, label, color]) => (
+              <article className="stat-card" key={label}>
+                <div className="stat-card-top">
+                  <span className={`stat-icon ${color}`}>{icon}</span>
+                  <span className="stat-caption">{caption}</span>
+                </div>
+                <strong>{analyticsLoading ? "—" : value}</strong>
+                <p>{label}</p>
+              </article>
+            ))}
+          </section>
 
           {analyticsError && (
-            <p>{analyticsError}</p>
+            <div className="alert-card alert-error">
+              <span>!</span>
+              {analyticsError}
+            </div>
           )}
 
-          {!analyticsLoading &&
-            !analyticsError &&
-            analytics && (
-              <div>
-                {/* -------------------------------------------
-                    BASIC COUNTS
-                -------------------------------------------- */}
-
+          <section className="analytics-grid">
+            <article className="panel completion-panel">
+              <div className="panel-heading">
                 <div>
-                  <h3>Teams</h3>
-                  <p>
-                    {analytics.teamCount}
-                  </p>
+                  <span className="panel-kicker">PRODUCTIVITY</span>
+                  <h2>Task completion</h2>
                 </div>
+                <span className="panel-menu">•••</span>
+              </div>
 
-                <div>
-                  <h3>Projects</h3>
-                  <p>
-                    {analytics.projectCount}
-                  </p>
-                </div>
-
-                <div>
-                  <h3>Total Tasks</h3>
-                  <p>
-                    {analytics.totalTasks}
-                  </p>
-                </div>
-
-                <div>
-                  <h3>TODO</h3>
-                  <p>
-                    {analytics.todoTasks}
-                  </p>
-                </div>
-
-                <div>
-                  <h3>In Progress</h3>
-                  <p>
-                    {analytics.inProgressTasks}
-                  </p>
-                </div>
-
-                <div>
-                  <h3>In Review</h3>
-                  <p>
-                    {analytics.inReviewTasks}
-                  </p>
-                </div>
-
-                <div>
-                  <h3>Completed</h3>
-                  <p>
-                    {analytics.completedTasks}
-                  </p>
-                </div>
-
-                <div>
-                  <h3>Overdue</h3>
-                  <p>
-                    {analytics.overdueTasks}
-                  </p>
-                </div>
-
-                {/* -------------------------------------------
-                    OVERALL COMPLETION
-                -------------------------------------------- */}
-
-                <div>
-                  <h3>Completion</h3>
-
-                  <p>
-                    <strong>
+              {analyticsLoading ? (
+                <div className="panel-loading">Loading analytics...</div>
+              ) : (
+                <div className="completion-content">
+                  <div
+                    className="completion-ring"
+                    style={
                       {
-                        analytics.completionPercentage
-                      }
-                      %
-                    </strong>
-                  </p>
-
-                  <progress
-                    value={
-                      analytics.completionPercentage
+                        "--completion": `${analytics?.completionPercentage ?? 0}%`,
+                      } as CSSProperties
                     }
-                    max={100}
-                    aria-label="Overall task completion"
                   >
-                    {
-                      analytics.completionPercentage
-                    }
-                    %
-                  </progress>
+                    <div className="completion-ring-inner">
+                      <strong>{analytics?.completionPercentage ?? 0}%</strong>
+                      <span>completed</span>
+                    </div>
+                  </div>
+
+                  <div className="completion-details">
+                    <div className="completion-big">
+                      <strong>{analytics?.completedTasks ?? 0}</strong>
+                      <span>completed tasks</span>
+                    </div>
+
+                    <div className="mini-metric">
+                      <span className="metric-dot dot-review" />
+                      <span>In review</span>
+                      <strong>{analytics?.inReviewTasks ?? 0}</strong>
+                    </div>
+
+                    <div className="mini-metric">
+                      <span className="metric-dot dot-overdue" />
+                      <span>Overdue</span>
+                      <strong>{analytics?.overdueTasks ?? 0}</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </article>
+
+            {[
+              {
+                kicker: "BREAKDOWN",
+                title: "Task status",
+                items: statusItems,
+              },
+              {
+                kicker: "BREAKDOWN",
+                title: "Priority",
+                items: priorityItems,
+              },
+            ].map(({ kicker, title, items }) => (
+              <article className="panel" key={title}>
+                <div className="panel-heading">
+                  <div>
+                    <span className="panel-kicker">{kicker}</span>
+                    <h2>{title}</h2>
+                  </div>
                 </div>
 
-                {/* =================================================
-                    TASK STATUS DISTRIBUTION
-                ================================================== */}
+                <div className="distribution-list">
+                  {items.map(([label, value, className]) => {
+                    const percentage = getPercentage(
+                      value,
+                      analytics?.totalTasks ?? 0
+                    );
 
-                <section>
-                  <h2>
-                    Task Status Distribution
-                  </h2>
+                    return (
+                      <div className="distribution-item" key={label}>
+                        <div className="distribution-header">
+                          <span>
+                            <i className={`distribution-dot ${className}`} />
+                            {label}
+                          </span>
+                          <strong>
+                            {value} <small>({percentage}%)</small>
+                          </strong>
+                        </div>
+                        <div className="distribution-track">
+                          <span
+                            className={className}
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+                  )}
+                </div>
+              </article>
+            ))}
+          </section>
 
-                  {/* TODO */}
+          <section className="section-block" id="teams-section">
+            <div className="section-heading">
+              <div>
+                <span className="panel-kicker">COLLABORATION</span>
+                <h2>Your teams</h2>
+                <p>Workspaces you belong to and manage.</p>
+              </div>
 
-                  <div>
-                    <p>
-                      <strong>
-                        TODO
-                      </strong>{" "}
-                      {
-                        analytics
-                          .statusDistribution
-                          .TODO
-                      }{" "}
-                      {analytics
-                        .statusDistribution
-                        .TODO === 1
-                        ? "task"
-                        : "tasks"}{" "}
-                      (
-                      {getPercentage(
-                        analytics
-                          .statusDistribution
-                          .TODO,
-                        analytics.totalTasks
-                      )}
-                      %)
-                    </p>
+              <button className="secondary-button" onClick={handleCreateTeam}>
+                ＋ New team
+              </button>
+            </div>
 
-                    <progress
-                      value={getPercentage(
-                        analytics
-                          .statusDistribution
-                          .TODO,
-                        analytics.totalTasks
-                      )}
-                      max={100}
-                      aria-label="TODO task percentage"
-                    >
-                      {getPercentage(
-                        analytics
-                          .statusDistribution
-                          .TODO,
-                        analytics.totalTasks
-                      )}
-                      %
-                    </progress>
-                  </div>
-
-                  {/* IN PROGRESS */}
-
-                  <div>
-                    <p>
-                      <strong>
-                        IN PROGRESS
-                      </strong>{" "}
-                      {
-                        analytics
-                          .statusDistribution
-                          .IN_PROGRESS
-                      }{" "}
-                      {analytics
-                        .statusDistribution
-                        .IN_PROGRESS === 1
-                        ? "task"
-                        : "tasks"}{" "}
-                      (
-                      {getPercentage(
-                        analytics
-                          .statusDistribution
-                          .IN_PROGRESS,
-                        analytics.totalTasks
-                      )}
-                      %)
-                    </p>
-
-                    <progress
-                      value={getPercentage(
-                        analytics
-                          .statusDistribution
-                          .IN_PROGRESS,
-                        analytics.totalTasks
-                      )}
-                      max={100}
-                      aria-label="In progress task percentage"
-                    >
-                      {getPercentage(
-                        analytics
-                          .statusDistribution
-                          .IN_PROGRESS,
-                        analytics.totalTasks
-                      )}
-                      %
-                    </progress>
-                  </div>
-
-                  {/* IN REVIEW */}
-
-                  <div>
-                    <p>
-                      <strong>
-                        IN REVIEW
-                      </strong>{" "}
-                      {
-                        analytics
-                          .statusDistribution
-                          .IN_REVIEW
-                      }{" "}
-                      {analytics
-                        .statusDistribution
-                        .IN_REVIEW === 1
-                        ? "task"
-                        : "tasks"}{" "}
-                      (
-                      {getPercentage(
-                        analytics
-                          .statusDistribution
-                          .IN_REVIEW,
-                        analytics.totalTasks
-                      )}
-                      %)
-                    </p>
-
-                    <progress
-                      value={getPercentage(
-                        analytics
-                          .statusDistribution
-                          .IN_REVIEW,
-                        analytics.totalTasks
-                      )}
-                      max={100}
-                      aria-label="In review task percentage"
-                    >
-                      {getPercentage(
-                        analytics
-                          .statusDistribution
-                          .IN_REVIEW,
-                        analytics.totalTasks
-                      )}
-                      %
-                    </progress>
-                  </div>
-
-                  {/* DONE */}
-
-                  <div>
-                    <p>
-                      <strong>
-                        DONE
-                      </strong>{" "}
-                      {
-                        analytics
-                          .statusDistribution
-                          .DONE
-                      }{" "}
-                      {analytics
-                        .statusDistribution
-                        .DONE === 1
-                        ? "task"
-                        : "tasks"}{" "}
-                      (
-                      {getPercentage(
-                        analytics
-                          .statusDistribution
-                          .DONE,
-                        analytics.totalTasks
-                      )}
-                      %)
-                    </p>
-
-                    <progress
-                      value={getPercentage(
-                        analytics
-                          .statusDistribution
-                          .DONE,
-                        analytics.totalTasks
-                      )}
-                      max={100}
-                      aria-label="Completed task percentage"
-                    >
-                      {getPercentage(
-                        analytics
-                          .statusDistribution
-                          .DONE,
-                        analytics.totalTasks
-                      )}
-                      %
-                    </progress>
-                  </div>
-                </section>
-
-                {/* =================================================
-                    PRIORITY DISTRIBUTION
-                ================================================== */}
-
-                <section>
-                  <h2>
-                    Priority Distribution
-                  </h2>
-
-                  {/* LOW */}
-
-                  <div>
-                    <p>
-                      <strong>
-                        LOW
-                      </strong>{" "}
-                      {
-                        analytics
-                          .priorityDistribution
-                          .LOW
-                      }{" "}
-                      {analytics
-                        .priorityDistribution
-                        .LOW === 1
-                        ? "task"
-                        : "tasks"}{" "}
-                      (
-                      {getPercentage(
-                        analytics
-                          .priorityDistribution
-                          .LOW,
-                        analytics.totalTasks
-                      )}
-                      %)
-                    </p>
-
-                    <progress
-                      value={getPercentage(
-                        analytics
-                          .priorityDistribution
-                          .LOW,
-                        analytics.totalTasks
-                      )}
-                      max={100}
-                      aria-label="Low priority task percentage"
-                    >
-                      {getPercentage(
-                        analytics
-                          .priorityDistribution
-                          .LOW,
-                        analytics.totalTasks
-                      )}
-                      %
-                    </progress>
-                  </div>
-
-                  {/* MEDIUM */}
-
-                  <div>
-                    <p>
-                      <strong>
-                        MEDIUM
-                      </strong>{" "}
-                      {
-                        analytics
-                          .priorityDistribution
-                          .MEDIUM
-                      }{" "}
-                      {analytics
-                        .priorityDistribution
-                        .MEDIUM === 1
-                        ? "task"
-                        : "tasks"}{" "}
-                      (
-                      {getPercentage(
-                        analytics
-                          .priorityDistribution
-                          .MEDIUM,
-                        analytics.totalTasks
-                      )}
-                      %)
-                    </p>
-
-                    <progress
-                      value={getPercentage(
-                        analytics
-                          .priorityDistribution
-                          .MEDIUM,
-                        analytics.totalTasks
-                      )}
-                      max={100}
-                      aria-label="Medium priority task percentage"
-                    >
-                      {getPercentage(
-                        analytics
-                          .priorityDistribution
-                          .MEDIUM,
-                        analytics.totalTasks
-                      )}
-                      %
-                    </progress>
-                  </div>
-
-                  {/* HIGH */}
-
-                  <div>
-                    <p>
-                      <strong>
-                        HIGH
-                      </strong>{" "}
-                      {
-                        analytics
-                          .priorityDistribution
-                          .HIGH
-                      }{" "}
-                      {analytics
-                        .priorityDistribution
-                        .HIGH === 1
-                        ? "task"
-                        : "tasks"}{" "}
-                      (
-                      {getPercentage(
-                        analytics
-                          .priorityDistribution
-                          .HIGH,
-                        analytics.totalTasks
-                      )}
-                      %)
-                    </p>
-
-                    <progress
-                      value={getPercentage(
-                        analytics
-                          .priorityDistribution
-                          .HIGH,
-                        analytics.totalTasks
-                      )}
-                      max={100}
-                      aria-label="High priority task percentage"
-                    >
-                      {getPercentage(
-                        analytics
-                          .priorityDistribution
-                          .HIGH,
-                        analytics.totalTasks
-                      )}
-                      %
-                    </progress>
-                  </div>
-
-                  {/* URGENT */}
-
-                  <div>
-                    <p>
-                      <strong>
-                        URGENT
-                      </strong>{" "}
-                      {
-                        analytics
-                          .priorityDistribution
-                          .URGENT
-                      }{" "}
-                      {analytics
-                        .priorityDistribution
-                        .URGENT === 1
-                        ? "task"
-                        : "tasks"}{" "}
-                      (
-                      {getPercentage(
-                        analytics
-                          .priorityDistribution
-                          .URGENT,
-                        analytics.totalTasks
-                      )}
-                      %)
-                    </p>
-
-                    <progress
-                      value={getPercentage(
-                        analytics
-                          .priorityDistribution
-                          .URGENT,
-                        analytics.totalTasks
-                      )}
-                      max={100}
-                      aria-label="Urgent priority task percentage"
-                    >
-                      {getPercentage(
-                        analytics
-                          .priorityDistribution
-                          .URGENT,
-                        analytics.totalTasks
-                      )}
-                      %
-                    </progress>
-                  </div>
-                </section>
+            {teamsLoading && (
+              <div className="empty-card">
+                <div className="loading-spinner small" />
+                <p>Loading your teams...</p>
               </div>
             )}
-        </section>
 
-        {/* =====================================================
-            CREATE TEAM FORM
-        ====================================================== */}
+            {teamsError && (
+              <div className="alert-card alert-error">
+                <span>!</span>
+                {teamsError}
+              </div>
+            )}
 
-        {showCreateTeam && (
-          <section>
-            <h2>
-              Create New Team
-            </h2>
+            {!teamsLoading && teams.length === 0 && (
+              <div className="empty-card">
+                <div className="empty-icon">♙</div>
+                <h3>No teams yet</h3>
+                <p>Create your first team to start collaborating.</p>
+                <button className="primary-button" onClick={handleCreateTeam}>
+                  ＋ Create your first team
+                </button>
+              </div>
+            )}
 
-            <form
-              onSubmit={
-                handleCreateTeamSubmit
-              }
-            >
-              <div>
-                <label htmlFor="teamName">
-                  Team Name
-                </label>
+            {!teamsLoading && teams.length > 0 && (
+              <div className="teams-grid">
+                {teams.map((team, index) => (
+                  <article className="team-card" key={team.id}>
+                    <div className="team-card-cover">
+                      <span className={`team-color team-color-${index % 4}`}>
+                        {team.name.charAt(0).toUpperCase()}
+                      </span>
+                      <span className="team-card-menu">•••</span>
+                    </div>
 
+                    <div className="team-card-body">
+                      <div className="team-title-row">
+                        <h3>{team.name}</h3>
+                        <span
+                          className={`role-badge role-${team.role.toLowerCase()}`}
+                        >
+                          {team.role}
+                        </span>
+                      </div>
+
+                      <p className="team-description">
+                        {team.description || "No description provided."}
+                      </p>
+
+                      <div className="team-meta">
+                        <span>
+                          <strong>{team.memberCount}</strong>{" "}
+                          {team.memberCount === 1 ? "member" : "members"}
+                        </span>
+                        <span>
+                          <strong>{team.projectCount}</strong>{" "}
+                          {team.projectCount === 1 ? "project" : "projects"}
+                        </span>
+                      </div>
+
+                      <button
+                        className="team-open-button"
+                        onClick={() => navigate(`/teams/${team.id}`)}
+                      >
+                        Open team <span>→</span>
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+      </div>
+
+      {showCreateTeam && (
+        <div
+          className="modal-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !creatingTeam) {
+              setShowCreateTeam(false);
+            }
+          }}
+        >
+          <section className="modal-card" role="dialog" aria-modal="true">
+            <div className="modal-header">
+              <div className="modal-title-wrap">
+                <span className="modal-icon">＋</span>
+                <div>
+                  <span className="panel-kicker">NEW WORKSPACE</span>
+                  <h2>Create a team</h2>
+                </div>
+              </div>
+
+              <button
+                className="modal-close"
+                onClick={() => setShowCreateTeam(false)}
+                disabled={creatingTeam}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateTeamSubmit}>
+              <div className="form-field">
+                <label htmlFor="teamName">Team name</label>
                 <input
                   id="teamName"
                   type="text"
                   value={teamName}
-                  onChange={(event) =>
-                    setTeamName(
-                      event.target.value
-                    )
-                  }
-                  placeholder="Enter team name"
+                  onChange={(event) => setTeamName(event.target.value)}
+                  placeholder="e.g. Product Design"
                   disabled={creatingTeam}
+                  autoFocus
                 />
               </div>
 
-              <div>
+              <div className="form-field">
                 <label htmlFor="teamDescription">
-                  Description
+                  Description <span>Optional</span>
                 </label>
-
                 <textarea
                   id="teamDescription"
                   value={teamDescription}
-                  onChange={(event) =>
-                    setTeamDescription(
-                      event.target.value
-                    )
-                  }
-                  placeholder="Enter team description"
+                  onChange={(event) => setTeamDescription(event.target.value)}
+                  placeholder="What will this team work on?"
                   rows={4}
                   disabled={creatingTeam}
                 />
               </div>
 
               {createTeamError && (
-                <p>
-                  {createTeamError}
-                </p>
+                <div className="form-message form-error">{createTeamError}</div>
               )}
 
               {createTeamSuccess && (
-                <p>
+                <div className="form-message form-success">
                   {createTeamSuccess}
-                </p>
+                </div>
               )}
 
-              <button
-                type="submit"
-                disabled={creatingTeam}
-              >
-                {creatingTeam
-                  ? "Creating..."
-                  : "Create Team"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setShowCreateTeam(false)
-                }
-                disabled={creatingTeam}
-              >
-                Cancel
-              </button>
-            </form>
-          </section>
-        )}
-
-        {/* =====================================================
-            TEAMS SECTION
-        ====================================================== */}
-
-        <section>
-          <div>
-            <h2>
-              Your Teams
-            </h2>
-
-            <button
-              onClick={handleCreateTeam}
-            >
-              + Create Team
-            </button>
-          </div>
-
-          {teamsLoading && (
-            <p>
-              Loading your teams...
-            </p>
-          )}
-
-          {teamsError && (
-            <p>{teamsError}</p>
-          )}
-
-          {!teamsLoading &&
-            teams.length === 0 && (
-              <div>
-                <h3>
-                  No teams yet
-                </h3>
-
-                <p>
-                  Create your first team
-                  to start collaborating.
-                </p>
-
+              <div className="modal-actions">
                 <button
-                  onClick={
-                    handleCreateTeam
-                  }
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setShowCreateTeam(false)}
+                  disabled={creatingTeam}
                 >
-                  Create Your First Team
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="primary-button"
+                  disabled={creatingTeam}
+                >
+                  {creatingTeam ? "Creating..." : "Create team"}
                 </button>
               </div>
-            )}
-
-          {!teamsLoading &&
-            teams.length > 0 && (
-              <div>
-                {teams.map((team) => (
-                  <article
-                    key={team.id}
-                  >
-                    <h3>
-                      {team.name}
-                    </h3>
-
-                    <p>
-                      {team.description ||
-                        "No description provided."}
-                    </p>
-
-                    <p>
-                      Role:{" "}
-                      <strong>
-                        {team.role}
-                      </strong>
-                    </p>
-
-                    <p>
-                      Members:{" "}
-                      {team.memberCount}
-                    </p>
-
-                    <p>
-                      Projects:{" "}
-                      {team.projectCount}
-                    </p>
-
-                    <button
-                      onClick={() =>
-                        navigate(
-                          `/teams/${team.id}`
-                        )
-                      }
-                    >
-                      View Team
-                    </button>
-                  </article>
-                ))}
-              </div>
-            )}
-        </section>
-      </main>
-    </div>
+            </form>
+          </section>
+        </div>
+      )}
+    </AppLayout>
   );
 };
 
