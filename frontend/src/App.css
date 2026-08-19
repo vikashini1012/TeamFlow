@@ -110,3 +110,1072 @@
   font-size: 11px;
 }
 
+/* ============================================================
+   TEAMFLOW — DASHBOARD TASK 23 VISUAL REFINEMENT
+   ============================================================ */
+
+/* Better dashboard readability */
+.dashboard-content {
+  padding-top: 42px;
+}
+
+.dashboard-heading {
+  margin-bottom: 32px;
+}
+
+.dashboard-heading h1 {
+  font-size: clamp(32px, 3.2vw, 40px);
+  line-height: 1.16;
+  letter-spacing: -1.2px;
+}
+
+.dashboard-heading p {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.eyebrow,
+.panel-kicker {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+}
+
+/* Dashboard buttons */
+.primary-button,
+.secondary-button {
+  min-height: 43px;
+  padding: 0 17px;
+  font-size: 13px;
+  border-radius: 9px;
+}
+
+/* ============================================================
+   SUMMARY CARDS
+   ============================================================ */
+
+.stats-grid {
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.stat-card {
+  min-height: 122px;
+  padding: 19px;
+  border-radius: 13px;
+}
+
+.stat-card-top {
+  margin-bottom: 19px;
+}
+
+.stat-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  font-size: 14px;
+}
+
+.stat-caption {
+  font-size: 11px;
+}
+
+.stat-card > strong {
+  font-size: 30px;
+  line-height: 1.05;
+}
+
+.stat-card > p {
+  margin-top: 7px;
+  font-size: 12px;
+}
+
+/* ============================================================
+   ANALYTICS PANELS
+   ============================================================ */
+
+.analytics-grid {
+  gap: 14px;
+}
+
+.panel {
+  min-height: 280px;
+  padding: 21px;
+  border-radius: 13px;
+}
+
+.panel-heading {
+  margin-bottom: 22px;
+}
+
+.panel-heading h2,
+.section-heading h2 {
+  margin-top: 5px;
+  font-size: 18px;
+}
+
+.completion-content {
+  min-height: 205px;
+  gap: 28px;
+}
+
+.completion-ring {
+  width: 154px;
+  height: 154px;
+  flex-basis: 154px;
+}
+
+.completion-ring:after {
+  inset: 10px;
+}
+
+.completion-ring-inner strong {
+  font-size: 29px;
+}
+
+.completion-ring-inner span {
+  font-size: 11px;
+}
+
+.completion-details {
+  min-width: 135px;
+  gap: 15px;
+}
+
+.completion-big {
+  padding-bottom: 11px;
+}
+
+.completion-big strong {
+  font-size: 22px;
+}
+
+.completion-big span,
+.mini-metric {
+  font-size: 12px;
+}
+
+.mini-metric {
+  grid-template-columns: 7px 1fr auto;
+}
+
+.mini-metric strong {
+  font-size: 13px;
+}
+
+/* ============================================================
+   STATUS / PRIORITY ANALYTICS
+   ============================================================ */
+
+.distribution-list {
+  gap: 18px;
+}
+
+.distribution-item {
+  gap: 8px;
+}
+
+.distribution-header {
+  font-size: 12px;
+}
+
+.distribution-header strong {
+  font-size: 12px;
+}
+
+.distribution-header small {
+  margin-left: 2px;
+  font-size: 11px;
+}
+
+.distribution-track {
+  height: 7px;
+  border-radius: 99px;
+}
+
+.distribution-track span {
+  min-width: 0;
+}
+
+/* ============================================================
+   ANALYTICS EMPTY STATES
+   ============================================================ */
+
+.analytics-empty-state {
+  min-height: 205px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 310px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.analytics-empty-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 12px;
+  border: 1px solid rgba(168, 239, 39, 0.18);
+  border-radius: 12px;
+  background: var(--tf-lime-soft);
+  color: var(--tf-lime);
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.analytics-empty-state h3 {
+  margin-bottom: 7px;
+  color: #e4ebe7;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 15px;
+}
+
+.analytics-empty-state p {
+  margin-bottom: 15px;
+  color: #707a76;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.analytics-mini-empty {
+  min-height: 205px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #68726e;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ============================================================
+   ANALYTICS LOADING
+   ============================================================ */
+
+.panel-loading {
+  min-height: 205px;
+  gap: 8px;
+  font-size: 12px;
+}
+
+/* ============================================================
+   TEAMS SECTION
+   ============================================================ */
+
+.section-block {
+  margin-top: 38px;
+}
+
+.section-heading {
+  margin-bottom: 17px;
+}
+
+.section-heading p {
+  margin-top: 7px;
+  font-size: 12px;
+}
+
+.teams-grid {
+  gap: 14px;
+}
+
+.team-card {
+  border-radius: 13px;
+}
+
+.team-card-cover {
+  height: 62px;
+  padding: 0 18px;
+}
+
+.team-color {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  font-size: 14px;
+}
+
+.team-card-body {
+  padding: 18px;
+}
+
+.team-title-row h3 {
+  font-size: 15px;
+}
+
+.role-badge {
+  padding: 5px 8px;
+  font-size: 10px;
+}
+
+.team-description {
+  min-height: 38px;
+  margin-top: 9px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.team-meta {
+  gap: 20px;
+  margin-top: 16px;
+  padding-top: 13px;
+  font-size: 11px;
+}
+
+.team-open-button {
+  margin-top: 15px;
+  padding-top: 10px;
+  font-size: 12px;
+}
+
+/* ============================================================
+   EMPTY TEAM STATE
+   ============================================================ */
+
+.empty-card {
+  min-height: 230px;
+  padding: 32px;
+  border-radius: 13px;
+}
+
+.empty-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 21px;
+}
+
+.empty-card h3 {
+  font-size: 16px;
+}
+
+.empty-card p {
+  margin-bottom: 11px;
+  font-size: 12px;
+}
+
+/* ============================================================
+   DASHBOARD ALERTS
+   ============================================================ */
+
+.alert-card {
+  margin-bottom: 15px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  font-size: 12px;
+}
+
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 1050px) {
+  .dashboard-content {
+    padding-top: 34px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analytics-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .completion-panel {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 650px) {
+  .dashboard-content {
+    padding: 27px 17px 45px;
+  }
+
+  .dashboard-heading {
+    margin-bottom: 23px;
+  }
+
+  .dashboard-heading h1 {
+    font-size: 30px;
+    letter-spacing: -0.8px;
+  }
+
+  .dashboard-heading p {
+    font-size: 13px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .stat-card {
+    min-height: 108px;
+    padding: 15px;
+  }
+
+  .stat-card-top {
+    margin-bottom: 15px;
+  }
+
+  .stat-card > strong {
+    font-size: 25px;
+  }
+
+  .stat-card > p {
+    font-size: 11px;
+  }
+
+  .analytics-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .completion-panel {
+    grid-column: auto;
+  }
+
+  .panel {
+    min-height: 260px;
+    padding: 18px;
+  }
+
+  .completion-content {
+    min-height: 200px;
+  }
+
+  .completion-ring {
+    width: 145px;
+    height: 145px;
+    flex-basis: 145px;
+  }
+
+  .section-block {
+    margin-top: 30px;
+  }
+
+  .team-card-body {
+    padding: 17px;
+  }
+}
+
+/* ============================================================
+   SMALL PHONES
+   ============================================================ */
+
+@media (max-width: 450px) {
+  .dashboard-content {
+    padding: 24px 13px 40px;
+  }
+
+  .dashboard-heading h1 {
+    font-size: 27px;
+  }
+
+  .dashboard-heading p {
+    font-size: 12px;
+  }
+
+  .stats-grid {
+    gap: 8px;
+  }
+
+  .stat-card {
+    min-height: 100px;
+    padding: 13px;
+  }
+
+  .stat-icon {
+    width: 31px;
+    height: 31px;
+  }
+
+  .stat-card > strong {
+    font-size: 23px;
+  }
+
+  .stat-caption {
+    font-size: 10px;
+  }
+
+  .stat-card > p {
+    font-size: 10px;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .panel-heading h2 {
+    font-size: 17px;
+  }
+
+  .completion-content {
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .completion-details {
+    width: 100%;
+  }
+
+  .completion-ring {
+    width: 140px;
+    height: 140px;
+    flex-basis: 140px;
+  }
+
+  .completion-ring-inner strong {
+    font-size: 27px;
+  }
+
+  .analytics-empty-state {
+    min-height: 190px;
+  }
+}
+
+/* ============================================================
+   TEAMFLOW — GLOBAL TYPOGRAPHY SCALE
+   Medium / readable application-wide typography
+   ============================================================ */
+
+/* Base application typography */
+body {
+  font-size: 15px;
+}
+
+button,
+input,
+textarea,
+select {
+  font-size: 14px;
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+
+.sidebar-brand {
+  font-size: 17px;
+}
+
+.nav-label {
+  font-size: 11px;
+  letter-spacing: 1.4px;
+}
+
+.nav-item {
+  font-size: 13px;
+  min-height: 38px;
+}
+
+.nav-icon {
+  font-size: 14px;
+}
+
+.project-nav-name {
+  font-size: 13px;
+}
+
+.sidebar-empty {
+  font-size: 12px;
+}
+
+.sidebar-tip strong {
+  font-size: 13px;
+}
+
+.sidebar-tip p {
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.sidebar-logout {
+  font-size: 13px;
+}
+
+/* ============================================================
+   TOPBAR
+   ============================================================ */
+
+.topbar-search input {
+  font-size: 13px;
+}
+
+.topbar-search input::placeholder {
+  font-size: 13px;
+}
+
+.topbar-search kbd {
+  font-size: 10px;
+}
+
+.topbar-icon-button {
+  font-size: 14px;
+}
+
+.user-menu-info strong {
+  font-size: 12px;
+}
+
+.user-menu-info span {
+  font-size: 10px;
+}
+
+.user-chevron {
+  font-size: 12px;
+}
+
+/* ============================================================
+   GLOBAL BUTTONS
+   ============================================================ */
+
+.primary-button,
+.secondary-button,
+.team-open-button,
+.modal-close {
+  font-size: 13px;
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+
+.dashboard-heading h1 {
+  font-size: clamp(34px, 3.2vw, 42px);
+}
+
+.dashboard-heading p {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.eyebrow,
+.panel-kicker {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+}
+
+/* Summary cards */
+
+.stat-caption {
+  font-size: 12px;
+}
+
+.stat-card > strong {
+  font-size: 31px;
+}
+
+.stat-card > p {
+  font-size: 13px;
+}
+
+/* Analytics */
+
+.panel-heading h2 {
+  font-size: 19px;
+}
+
+.distribution-header {
+  font-size: 13px;
+}
+
+.distribution-header strong {
+  font-size: 13px;
+}
+
+.distribution-header small {
+  font-size: 12px;
+}
+
+.completion-ring-inner strong {
+  font-size: 30px;
+}
+
+.completion-ring-inner span {
+  font-size: 12px;
+}
+
+.completion-big strong {
+  font-size: 23px;
+}
+
+.completion-big span {
+  font-size: 13px;
+}
+
+.mini-metric {
+  font-size: 13px;
+}
+
+.mini-metric strong {
+  font-size: 14px;
+}
+
+.analytics-empty-state h3 {
+  font-size: 16px;
+}
+
+.analytics-empty-state p {
+  font-size: 13px;
+}
+
+.analytics-mini-empty {
+  font-size: 13px;
+}
+
+/* Teams */
+
+.section-heading h2 {
+  font-size: 20px;
+}
+
+.section-heading p {
+  font-size: 13px;
+}
+
+.team-title-row h3 {
+  font-size: 16px;
+}
+
+.role-badge {
+  font-size: 10px;
+}
+
+.team-description {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.team-meta {
+  font-size: 12px;
+}
+
+.team-open-button {
+  font-size: 13px;
+}
+
+.empty-card h3 {
+  font-size: 17px;
+}
+
+.empty-card p {
+  font-size: 13px;
+}
+
+/* ============================================================
+   AUTHENTICATION
+   ============================================================ */
+
+.auth-visual p {
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.auth-subtitle {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.auth-field label {
+  font-size: 13px;
+}
+
+.auth-field input {
+  font-size: 14px;
+}
+
+.auth-field input::placeholder {
+  font-size: 13px;
+}
+
+.auth-submit {
+  font-size: 14px;
+}
+
+.auth-switch {
+  font-size: 13px;
+}
+
+.auth-error {
+  font-size: 13px;
+}
+
+/* ============================================================
+   ACCOUNT / PROFILE
+   ============================================================ */
+
+.account-page {
+  font-size: 14px;
+}
+
+.account-header h1 {
+  font-size: 32px;
+}
+
+.account-header p {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.account-card h2,
+.account-panel h2 {
+  font-size: 19px;
+}
+
+.account-card p,
+.account-panel p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.account-field label {
+  font-size: 13px;
+}
+
+.account-field input,
+.account-field textarea {
+  font-size: 14px;
+}
+
+.account-field input::placeholder,
+.account-field textarea::placeholder {
+  font-size: 13px;
+}
+
+/* ============================================================
+   TEAM DETAILS
+   ============================================================ */
+
+.team-details-page {
+  font-size: 14px;
+}
+
+.team-details-page h1 {
+  font-size: 32px;
+}
+
+.team-details-page h2 {
+  font-size: 20px;
+}
+
+.team-details-page h3 {
+  font-size: 16px;
+}
+
+.team-details-page p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.team-details-page label {
+  font-size: 13px;
+}
+
+.team-details-page input,
+.team-details-page textarea,
+.team-details-page select {
+  font-size: 14px;
+}
+
+/* ============================================================
+   PROJECT DETAILS
+   ============================================================ */
+
+.project-details-page {
+  font-size: 14px;
+}
+
+.project-details-page h1 {
+  font-size: 32px;
+}
+
+.project-details-page h2 {
+  font-size: 20px;
+}
+
+.project-details-page h3 {
+  font-size: 16px;
+}
+
+.project-details-page p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.project-details-page label {
+  font-size: 13px;
+}
+
+.project-details-page input,
+.project-details-page textarea,
+.project-details-page select {
+  font-size: 14px;
+}
+
+/* ============================================================
+   TASKS / TABLES / LISTS
+   ============================================================ */
+
+.task-card,
+.task-item,
+.task-row,
+.project-card,
+.member-card {
+  font-size: 13px;
+}
+
+.task-card h3,
+.task-item h3,
+.project-card h3,
+.member-card h3 {
+  font-size: 16px;
+}
+
+.task-card p,
+.task-item p,
+.project-card p,
+.member-card p {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.task-meta,
+.project-meta,
+.member-meta {
+  font-size: 12px;
+}
+
+table {
+  font-size: 13px;
+}
+
+th {
+  font-size: 12px;
+}
+
+td {
+  font-size: 13px;
+}
+
+/* ============================================================
+   MODALS / FORMS
+   ============================================================ */
+
+.modal-card h2 {
+  font-size: 20px;
+}
+
+.form-field label {
+  font-size: 13px;
+}
+
+.form-field label span {
+  font-size: 11px;
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select {
+  font-size: 14px;
+}
+
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+  font-size: 13px;
+}
+
+.form-message {
+  font-size: 13px;
+}
+
+/* ============================================================
+   ALERTS / EMPTY / LOADING
+   ============================================================ */
+
+.alert-card {
+  font-size: 13px;
+}
+
+.empty-card {
+  font-size: 14px;
+}
+
+.panel-loading {
+  font-size: 13px;
+}
+
+/* ============================================================
+   MOBILE — KEEP READABLE
+   ============================================================ */
+
+@media (max-width: 650px) {
+  body {
+    font-size: 14px;
+  }
+
+  .nav-item {
+    font-size: 14px;
+  }
+
+  .project-nav-name {
+    font-size: 14px;
+  }
+
+  .dashboard-heading h1 {
+    font-size: 30px;
+  }
+
+  .dashboard-heading p {
+    font-size: 13px;
+  }
+
+  .stat-caption {
+    font-size: 11px;
+  }
+
+  .stat-card > strong {
+    font-size: 26px;
+  }
+
+  .stat-card > p {
+    font-size: 12px;
+  }
+
+  .panel-heading h2 {
+    font-size: 18px;
+  }
+
+  .distribution-header {
+    font-size: 13px;
+  }
+
+  .distribution-header strong {
+    font-size: 13px;
+  }
+
+  .team-title-row h3 {
+    font-size: 16px;
+  }
+
+  .team-description {
+    font-size: 13px;
+  }
+
+  .team-meta {
+    font-size: 12px;
+  }
+
+  .primary-button,
+  .secondary-button {
+    font-size: 13px;
+  }
+}
